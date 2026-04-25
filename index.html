@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>延恩鎮 v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+:root{
+  --bg:#0a0a18;--panel:#13132a;--border:#4a90d9;--accent:#f7d94c;
+  --pink:#e85d9e;--green:#4ecb71;--red:#e85050;--text:#e8e8f0;--dim:#8888aa;
+  --tile:32px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;
+  width:100vw;height:100dvh;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.pf{font-family:'Press Start 2P',monospace;}
+
+/* ====== SCREENS ====== */
+.screen{display:none;width:100%;height:100dvh;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* ====== TITLE ====== */
+#scr-title{align-items:center;justify-content:center;gap:0;background:var(--bg);position:relative;overflow:hidden;}
+.title-grid{position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(74,144,217,.06) 32px),
+             repeating-linear-gradient(90deg,transparent,transparent 31px,rgba(74,144,217,.06) 32px);}
+.city-skyline{position:absolute;bottom:0;left:0;right:0;height:90px;
+  background:#12122a;
+  clip-path:polygon(0 100%,0 55%,4% 55%,4% 35%,8% 35%,8% 55%,12% 55%,12% 20%,16% 20%,16% 55%,20% 55%,20% 40%,24% 40%,24% 55%,28% 55%,28% 15%,32% 15%,32% 55%,36% 55%,36% 45%,40% 45%,40% 55%,44% 55%,44% 25%,48% 25%,48% 55%,52% 55%,52% 50%,56% 50%,56% 55%,60% 55%,60% 30%,64% 30%,64% 55%,68% 55%,68% 18%,72% 18%,72% 55%,76% 55%,76% 42%,80% 42%,80% 55%,84% 55%,84% 28%,88% 28%,88% 55%,92% 55%,92% 48%,96% 48%,96% 55%,100% 55%,100% 100%);}
+.star-dot{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;}
+.title-content{position:relative;z-index:5;text-align:center;padding:20px;}
+.game-title{font-family:'Press Start 2P',monospace;font-size:clamp(24px,7vw,42px);color:var(--accent);
+  text-shadow:3px 3px 0 #a08000,6px 6px 0 #604800;animation:float 3s ease-in-out infinite;margin-bottom:8px;}
+.game-sub{font-family:'Press Start 2P',monospace;font-size:clamp(6px,2vw,10px);color:var(--pink);letter-spacing:3px;margin-bottom:36px;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.t-btn{display:block;background:var(--panel);border:3px solid var(--border);color:var(--text);
+  font-family:'Press Start 2P',monospace;font-size:clamp(8px,2.5vw,12px);padding:14px 20px;margin:8px auto;
+  cursor:pointer;width:min(280px,85vw);text-align:center;transition:.1s;border-radius:2px;}
+.t-btn:active{background:var(--border);color:var(--bg);transform:translate(-1px,-1px);}
+
+/* ====== GAME WRAPPER ====== */
+#scr-game{flex-direction:column;background:var(--bg);}
+
+/* Top HUD */
+.top-hud{display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;background:#0d0d20;border-bottom:2px solid var(--border);
+  flex-shrink:0;height:44px;}
+.hud-day{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--accent);}
+.hud-money{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--green);}
+.hud-actions{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--pink);}
+.hud-btns{display:flex;gap:4px;}
+.hud-icon-btn{background:transparent;border:2px solid var(--border);color:var(--text);
+  font-size:14px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* Map viewport */
+.map-viewport{flex:1;overflow:hidden;position:relative;}
+#map-canvas{position:absolute;top:0;left:0;image-rendering:pixelated;}
+
+/* Bottom panel: dialogue + controls */
+.bottom-panel{flex-shrink:0;background:#0d0d20;border-top:2px solid var(--border);}
+
+/* Dialogue box */
+.dlg-box{padding:8px 12px;min-height:80px;position:relative;}
+.dlg-speaker{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--accent);margin-bottom:5px;}
+.dlg-text{font-size:13px;line-height:1.7;color:var(--text);}
+.dlg-cursor{display:inline-block;width:8px;height:13px;background:var(--text);animation:blink .8s step-end infinite;vertical-align:middle;}
+@keyframes blink{50%{opacity:0}}
+.dlg-choices{display:flex;flex-direction:column;gap:3px;margin-top:8px;}
+.ch-btn{background:transparent;border:2px solid var(--border);color:var(--text);
+  font-family:'Noto Sans TC',sans-serif;font-size:12px;padding:7px 10px;cursor:pointer;text-align:left;border-radius:2px;}
+.ch-btn:active{background:var(--border);color:var(--bg);}
+.ch-btn::before{content:"▶ ";color:var(--accent);}
+
+/* D-pad */
+.dpad-area{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;gap:10px;}
+.dpad{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,40px);gap:2px;flex-shrink:0;}
+.dpad-btn{background:#111130;border:2px solid #333366;color:var(--text);
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  border-radius:3px;-webkit-tap-highlight-color:transparent;}
+.dpad-btn:active{background:var(--border);border-color:var(--border);}
+.dpad-center{background:#1a1a3a;border-color:#444466;font-size:10px;}
+
+/* Action buttons */
+.act-btns{display:flex;flex-direction:column;gap:5px;flex:1;}
+.act-row{display:flex;gap:5px;}
+.act-btn{flex:1;background:#111130;border:2px solid #333366;color:var(--text);
+  font-family:'Noto Sans TC',sans-serif;font-size:10px;padding:7px 4px;cursor:pointer;
+  text-align:center;border-radius:2px;}
+.act-btn:active{background:var(--border);color:var(--bg);}
+.act-btn .icon{font-size:13px;display:block;}
+.act-btn .eff{font-size:8px;color:var(--green);display:block;}
+.act-end-day{width:100%;background:#1a1a00;border:2px solid var(--accent);color:var(--accent);
+  font-family:'Press Start 2P',monospace;font-size:8px;padding:8px;cursor:pointer;margin-top:4px;border-radius:2px;}
+.act-end-day:active{background:var(--accent);color:var(--bg);}
+
+/* ====== STATS SCREEN ====== */
+#scr-stats{background:var(--bg);padding:14px;gap:10px;overflow-y:auto;}
+.stats-title{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--accent);text-align:center;
+  padding-bottom:10px;border-bottom:2px solid var(--border);}
+.stat-row{display:flex;flex-direction:column;gap:3px;}
+.stat-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--dim);display:flex;justify-content:space-between;}
+.stat-label span{color:var(--accent);}
+.stat-bar{height:12px;background:#1a1a3a;border:2px solid #333355;}
+.stat-fill{height:100%;transition:width .4s;}
+.fill-design{background:var(--pink);}
+.fill-social{background:var(--green);}
+.fill-combat{background:#ff8800;}
+.fill-mood{background:#60d0ff;}
+.fill-favor{background:var(--accent);}
+.favor-card{background:rgba(232,93,158,.08);border:2px solid var(--pink);padding:10px;text-align:center;border-radius:2px;}
+.favor-big{font-family:'Press Start 2P',monospace;font-size:20px;color:var(--pink);}
+.money-card{background:rgba(247,217,76,.05);border:2px solid var(--accent);padding:8px;text-align:center;}
+.money-big{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--accent);}
+.back-btn{font-family:'Press Start 2P',monospace;font-size:9px;padding:10px;border:2px solid var(--border);
+  color:var(--border);background:transparent;cursor:pointer;border-radius:2px;}
+.back-btn:active{background:var(--border);color:var(--bg);}
+
+/* ====== INVENTORY ====== */
+#scr-inv{background:var(--bg);padding:12px;gap:8px;}
+.inv-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--border);padding-bottom:8px;}
+.inv-title{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--accent);}
+.inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;overflow-y:auto;flex:1;padding:4px 0;}
+.inv-item{background:var(--panel);border:2px solid #333355;padding:8px 4px;text-align:center;
+  cursor:pointer;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:2px;}
+.inv-item:active,.inv-item.selected{border-color:var(--accent);}
+.ii-icon{font-size:20px;}
+.ii-name{font-size:9px;color:var(--text);}
+.ii-count{font-size:9px;color:var(--dim);}
+.inv-detail{background:var(--panel);border:2px solid var(--border);padding:10px;border-radius:2px;}
+.id-name{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--accent);margin-bottom:6px;}
+.id-desc{font-size:11px;color:var(--dim);line-height:1.6;}
+.inv-act-row{display:flex;gap:6px;margin-top:8px;}
+.ia-btn{font-family:'Press Start 2P',monospace;font-size:7px;padding:8px 10px;cursor:pointer;border:2px solid;background:transparent;border-radius:2px;flex:1;}
+.ia-use{border-color:var(--green);color:var(--green);}
+.ia-use:active{background:var(--green);color:var(--bg);}
+.ia-give{border-color:var(--pink);color:var(--pink);}
+.ia-give:active{background:var(--pink);color:var(--bg);}
+
+/* ====== ACHIEVEMENTS ====== */
+#scr-ach{background:var(--bg);padding:12px;gap:10px;overflow-y:auto;}
+.ach-header{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--accent);text-align:center;
+  padding-bottom:10px;border-bottom:2px solid var(--border);}
+.ach-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow-y:auto;}
+.ach-card{background:var(--panel);border:2px solid #333355;padding:10px;border-radius:2px;text-align:center;}
+.ach-card.unlocked{border-color:var(--accent);}
+.ach-icon{font-size:24px;margin-bottom:4px;}
+.ach-name{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--accent);margin-bottom:4px;line-height:1.6;}
+.ach-desc{font-size:10px;color:var(--dim);line-height:1.5;}
+.ach-card.locked .ach-icon{filter:grayscale(1);opacity:.3;}
+.ach-card.locked .ach-name{color:var(--dim);}
+
+/* ====== SHOP ====== */
+#scr-shop{background:var(--bg);padding:12px;gap:8px;}
+.shop-hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--border);padding-bottom:8px;}
+.shop-title{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--accent);}
+.shop-money{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--green);}
+.shop-grid{display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex:1;}
+.shop-item{background:var(--panel);border:2px solid #333355;padding:10px 12px;cursor:pointer;
+  display:flex;align-items:center;gap:12px;border-radius:2px;}
+.shop-item:active{border-color:var(--accent);}
+.si-icon{font-size:24px;flex-shrink:0;}
+.si-info{flex:1;}
+.si-name{font-size:13px;font-weight:bold;margin-bottom:3px;}
+.si-eff{font-size:11px;color:var(--dim);}
+.si-price{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--accent);flex-shrink:0;}
+.si-disc{color:var(--red);font-size:9px;}
+
+/* ====== ENDING ====== */
+#scr-end{align-items:center;justify-content:center;gap:20px;padding:30px;}
+.end-title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,5vw,28px);text-align:center;animation:float 2s ease-in-out infinite;}
+.end-text{font-size:clamp(12px,3.5vw,15px);text-align:center;max-width:500px;line-height:2;color:var(--dim);}
+
+/* ====== COMBAT ====== */
+#scr-combat{background:#050510;align-items:center;justify-content:center;gap:12px;padding:16px;}
+.combat-arena{width:min(400px,96vw);height:160px;background:#0a0a20;border:3px solid #ff4444;position:relative;overflow:hidden;border-radius:2px;}
+.c-bg{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 15px,rgba(255,68,68,.04) 16px),repeating-linear-gradient(90deg,transparent,transparent 15px,rgba(255,68,68,.04) 16px);}
+.c-player,.c-enemy{position:absolute;bottom:12px;display:flex;flex-direction:column;align-items:center;gap:0;}
+.c-player{left:30px;}
+.c-enemy{right:30px;}
+.cf-head{width:18px;height:14px;border-radius:3px 3px 0 0;border:2px solid rgba(0,0,0,.4);}
+.cf-body{width:20px;height:12px;border:2px solid rgba(0,0,0,.3);}
+.cf-legs{width:18px;height:10px;display:flex;}
+.cf-leg{flex:1;border:1px solid rgba(0,0,0,.3);}
+.cf-lbl{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--accent);margin-top:3px;white-space:nowrap;}
+.c-hud{width:min(400px,96vw);display:flex;justify-content:space-between;align-items:center;}
+.hp-blk{font-family:'Press Start 2P',monospace;font-size:7px;background:var(--panel);border:2px solid var(--red);padding:6px 10px;min-width:120px;border-radius:2px;}
+.hp-bar{height:8px;background:#1a0a0a;border:2px solid #440000;margin-top:4px;}
+.hp-fill{height:100%;background:var(--red);transition:width .3s;}
+.c-log{width:min(400px,96vw);background:var(--panel);border:2px solid var(--border);padding:8px;height:60px;overflow-y:auto;font-family:'Press Start 2P',monospace;font-size:7px;color:var(--text);line-height:1.8;border-radius:2px;}
+.c-acts{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:min(400px,96vw);}
+.c-btn{font-family:'Press Start 2P',monospace;font-size:8px;padding:10px;cursor:pointer;border:2px solid;background:transparent;border-radius:2px;}
+.c-atk{border-color:var(--red);color:var(--red);}
+.c-atk:active{background:var(--red);color:#fff;}
+.c-dg{border-color:var(--green);color:var(--green);}
+.c-dg:active{background:var(--green);color:var(--bg);}
+.c-sn{border-color:var(--accent);color:var(--accent);}
+.c-sn:active{background:var(--accent);color:var(--bg);}
+.c-rt{border-color:var(--dim);color:var(--dim);}
+.c-rt:active{background:var(--dim);color:var(--bg);}
+
+/* ====== NOTIFICATION ====== */
+.notif{position:fixed;top:50px;right:10px;background:var(--panel);border:3px solid var(--accent);
+  padding:8px 14px;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--accent);z-index:9000;
+  animation:slideIn .3s ease,fadeOut .5s ease 2s forwards;max-width:200px;line-height:1.8;border-radius:2px;}
+@keyframes slideIn{from{transform:translateX(220px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0;pointer-events:none}}
+
+.ach-popup{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#1a1200;border:3px solid var(--accent);padding:14px 20px;font-family:'Press Start 2P',monospace;
+  font-size:8px;color:var(--accent);z-index:9000;text-align:center;animation:achPop .5s ease;border-radius:2px;
+  white-space:nowrap;}
+@keyframes achPop{0%{transform:translateX(-50%) scale(.5);opacity:0}70%{transform:translateX(-50%) scale(1.05)}100%{transform:translateX(-50%) scale(1);opacity:1}}
+
+/* Interact prompt */
+.interact-prompt{position:absolute;background:rgba(0,0,0,.85);border:2px solid var(--accent);
+  color:var(--accent);font-family:'Press Start 2P',monospace;font-size:7px;padding:4px 8px;
+  pointer-events:none;z-index:100;white-space:nowrap;border-radius:2px;}
+
+/* Map location badge */
+.loc-badge{position:absolute;top:6px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.8);border:2px solid var(--border);color:var(--text);
+  font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 8px;z-index:50;border-radius:2px;
+  pointer-events:none;}
+.time-badge{position:absolute;top:6px;right:8px;
+  background:rgba(0,0,0,.8);border:2px solid var(--border);color:var(--accent);
+  font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 8px;z-index:50;border-radius:2px;
+  pointer-events:none;}
+</style>
+</head>
+<body>
+
+<!-- TITLE -->
+<div id="scr-title" class="screen active">
+  <div class="title-grid"></div>
+  <div class="city-skyline"></div>
+  <div class="title-content">
+    <div class="game-title">延恩鎮</div>
+    <div class="game-sub">MOBILE GALGAME RPG</div>
+    <button class="t-btn" onclick="startGame()">▶ 開始遊戲</button>
+    <button class="t-btn" onclick="loadSave()">📂 讀取存檔</button>
+    <button class="t-btn" onclick="showScreen('scr-ach');renderAch()">🏆 成就收集</button>
+    <button class="t-btn" onclick="showHelp()">？ 說明</button>
+  </div>
+</div>
+
+<!-- MAIN GAME -->
+<div id="scr-game" class="screen">
+  <div class="top-hud">
+    <div>
+      <div class="hud-day" id="hud-day">第1天 週一</div>
+      <div class="hud-actions" id="hud-acts">♦♦ 行動x2</div>
+    </div>
+    <div class="hud-money" id="hud-money">💰$3000</div>
+    <div class="hud-btns">
+      <button class="hud-icon-btn" onclick="showStats()" title="狀態">📊</button>
+      <button class="hud-icon-btn" onclick="showInv()" title="背包">🎒</button>
+      <button class="hud-icon-btn" onclick="saveGame()" title="存檔">💾</button>
+    </div>
+  </div>
+
+  <div class="map-viewport" id="map-viewport">
+    <canvas id="map-canvas"></canvas>
+    <div class="loc-badge" id="loc-badge">市中心廣場</div>
+    <div class="time-badge" id="time-badge">☀ 白天</div>
+    <div class="interact-prompt" id="interact-prompt" style="display:none">▲ 互動</div>
+  </div>
+
+  <div class="bottom-panel">
+    <div class="dlg-box" id="dlg-box">
+      <div class="dlg-speaker" id="dlg-spk">延恩鎮</div>
+      <div class="dlg-text" id="dlg-txt">歡迎來到延恩鎮！用方向鍵移動，靠近NPC後按A互動。<span class="dlg-cursor"></span></div>
+      <div class="dlg-choices" id="dlg-choices"></div>
+    </div>
+    <div class="dpad-area">
+      <div class="dpad">
+        <div></div>
+        <button class="dpad-btn" id="btn-up" ontouchstart="startMove('up')" ontouchend="stopMove()" onmousedown="startMove('up')" onmouseup="stopMove()">▲</button>
+        <div></div>
+        <button class="dpad-btn" id="btn-left" ontouchstart="startMove('left')" ontouchend="stopMove()" onmousedown="startMove('left')" onmouseup="stopMove()">◀</button>
+        <button class="dpad-btn dpad-center" onclick="interact()">A</button>
+        <button class="dpad-btn" id="btn-right" ontouchstart="startMove('right')" ontouchend="stopMove()" onmousedown="startMove('right')" onmouseup="stopMove()">▶</button>
+        <div></div>
+        <button class="dpad-btn" id="btn-down" ontouchstart="startMove('down')" ontouchend="stopMove()" onmousedown="startMove('down')" onmouseup="stopMove()">▼</button>
+        <div></div>
+      </div>
+      <div class="act-btns">
+        <div class="act-row">
+          <button class="act-btn" onclick="doAction('create')"><span class="icon">🖌</span>創作<span class="eff">設計+2 心情-3</span></button>
+          <button class="act-btn" onclick="doAction('draw')"><span class="icon">✏</span>繪畫<span class="eff">設計+2 心情-2</span></button>
+          <button class="act-btn" onclick="doAction('daydream')"><span class="icon">💭</span>發呆<span class="eff">設計+1 心情+2</span></button>
+        </div>
+        <div class="act-row">
+          <button class="act-btn" onclick="doAction('records')"><span class="icon">🎵</span>唱片<span class="eff">心情+1 好感+2</span></button>
+          <button class="act-btn" onclick="startCombat()"><span class="icon">🔫</span>瓦羅蘭<span class="eff">戰鬥+2</span></button>
+        </div>
+        <button class="act-end-day" onclick="endDay()">⏩ 結束今日，進入下一天</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div id="scr-stats" class="screen">
+  <div class="stats-title">★ 玩家狀態 ★</div>
+  <div class="stat-row">
+    <div class="stat-label">設計 <span id="s-design">10</span>/100</div>
+    <div class="stat-bar"><div class="stat-fill fill-design" id="b-design" style="width:10%"></div></div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-label">社交 <span id="s-social">10</span>/100</div>
+    <div class="stat-bar"><div class="stat-fill fill-social" id="b-social" style="width:10%"></div></div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-label">戰鬥 <span id="s-combat">10</span>/100</div>
+    <div class="stat-bar"><div class="stat-fill fill-combat" id="b-combat" style="width:10%"></div></div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-label">心情 <span id="s-mood">50</span></div>
+    <div class="stat-bar"><div class="stat-fill fill-mood" id="b-mood" style="width:66%"></div></div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-label">陣恩延心情 <span id="s-zmood">50</span></div>
+    <div class="stat-bar"><div class="stat-fill fill-mood" id="b-zmood" style="width:66%"></div></div>
+  </div>
+  <div class="favor-card">
+    <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--dim);margin-bottom:4px">陣恩延好感度</div>
+    <div class="favor-big" id="s-favor">0</div>
+    <div id="s-favor-lbl" style="font-size:12px;margin-top:4px;color:var(--pink)">普通</div>
+  </div>
+  <div class="money-card"><div class="money-big" id="s-money">💰 $3000</div></div>
+  <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--dim);text-align:center;padding:4px" id="s-day">第1天 週一 ☀ 白天</div>
+  <button class="back-btn" onclick="showScreen('scr-game')">◀ 返回</button>
+</div>
+
+<!-- INVENTORY -->
+<div id="scr-inv" class="screen">
+  <div class="inv-header">
+    <div class="inv-title">🎒 背包</div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--green)" id="inv-money">💰$3000</div>
+    <button class="back-btn" onclick="showScreen('scr-game')">✕</button>
+  </div>
+  <div class="inv-grid" id="inv-grid"></div>
+  <div class="inv-detail" id="inv-detail"><div class="id-name">選擇物品</div><div class="id-desc">點擊上方物品格查看詳情</div></div>
+  <div id="inv-act-area"></div>
+</div>
+
+<!-- ACHIEVEMENTS -->
+<div id="scr-ach" class="screen">
+  <div class="ach-header">🏆 成就收集</div>
+  <div class="ach-grid" id="ach-grid"></div>
+  <button class="back-btn" onclick="showScreen('scr-title')" style="margin-top:8px">◀ 返回</button>
+</div>
+
+<!-- SHOP -->
+<div id="scr-shop" class="screen">
+  <div class="shop-hdr">
+    <div class="shop-title" id="shop-title">🏪 超商</div>
+    <div class="shop-money" id="shop-money">💰$3000</div>
+    <button class="back-btn" onclick="showScreen('scr-game')">✕</button>
+  </div>
+  <div class="shop-grid" id="shop-grid"></div>
+</div>
+
+<!-- COMBAT -->
+<div id="scr-combat" class="screen">
+  <div style="font-family:'Press Start 2P',monospace;font-size:11px;color:#ff4444">⚔ 瓦羅蘭對決</div>
+  <div class="combat-arena">
+    <div class="c-bg"></div>
+    <div class="c-player">
+      <div class="cf-head" style="background:#f5b8d0"></div>
+      <div class="cf-body" style="background:#4466cc"></div>
+      <div class="cf-legs"><div class="cf-leg" style="background:#224488"></div><div class="cf-leg" style="background:#224488"></div></div>
+      <div class="cf-lbl">玩家</div>
+    </div>
+    <div class="c-enemy">
+      <div class="cf-head" style="background:#ff6644"></div>
+      <div class="cf-body" style="background:#882200"></div>
+      <div class="cf-legs"><div class="cf-leg" style="background:#551100"></div><div class="cf-leg" style="background:#551100"></div></div>
+      <div class="cf-lbl" id="c-enemy-lbl">敵人</div>
+    </div>
+  </div>
+  <div class="c-hud">
+    <div class="hp-blk">玩家HP<div class="hp-bar"><div class="hp-fill" id="c-php" style="width:100%"></div></div><div id="c-php-txt" style="font-size:7px;margin-top:2px">100/100</div></div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:14px;color:#ff8800">VS</div>
+    <div class="hp-blk" id="c-ehp-blk">敵人HP<div class="hp-bar"><div class="hp-fill" id="c-ehp" style="width:100%"></div></div><div id="c-ehp-txt" style="font-size:7px;margin-top:2px">100/100</div></div>
+  </div>
+  <div class="c-log" id="c-log">戰鬥開始！<br></div>
+  <div class="c-acts">
+    <button class="c-btn c-atk" onclick="cAct('attack')">🔫 射擊</button>
+    <button class="c-btn c-dg" onclick="cAct('dodge')">💨 閃避</button>
+    <button class="c-btn c-sn" onclick="cAct('snipe')">🎯 狙擊</button>
+    <button class="c-btn c-rt" onclick="cAct('retreat')">🏃 撤退</button>
+  </div>
+</div>
+
+<!-- ENDING -->
+<div id="scr-end" class="screen">
+  <div class="end-title" id="end-title">END</div>
+  <div class="end-text" id="end-text"></div>
+  <button class="t-btn" onclick="restartGame()">↩ 重新開始</button>
+  <button class="t-btn" onclick="showScreen('scr-ach');renderAch()">🏆 查看成就</button>
+</div>
+
+<script>
+// ============================================================
+// GAME DATA
+// ============================================================
+const TILE = 32;
+
+// Map: 0=wall/water, 1=road, 2=grass/plaza, 3=building
+// 32x28 grid representing 延恩鎮 台北市 (expanded)
+const MAP_W = 32, MAP_H = 28;
+
+// Tile types
+const T = { WATER:0, ROAD:1, GRASS:2, BUILDING:3, PARK:4, POND:5 };
+const TILE_COLORS = {
+  0:'#1a2a4a', // water
+  1:'#2a2a4a', // road (dark grey-blue)
+  2:'#1a3a1a', // grass
+  3:'#1a1a3a', // building (dark)
+  4:'#0a2a0a', // park/plaza
+  5:'#0a1a3a', // pond
+};
+
+// MAP grid
+// MAP grid (32 wide x 28 tall) — irregular layout, curved roads
+const MAP = [
+  [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,1,2,2,2,2,2,1,3,3,3,1,2,2,2,2,2,1,3,3,3,3,3,3,3,3,3,3],
+  [3,3,3,3,1,1,2,4,4,4,2,1,3,3,3,1,2,3,3,3,2,1,1,3,3,3,3,3,3,3,3,3],
+  [3,3,3,3,1,2,2,4,4,4,2,1,3,3,3,1,2,3,3,3,2,1,2,1,3,3,3,3,3,3,3,3],
+  [3,3,3,3,1,2,2,2,2,2,2,1,3,3,3,1,2,2,2,2,2,1,2,1,3,3,3,3,3,3,3,3],
+  [3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3], // Upper Rd (jogs left)
+  [3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,1,3,3,3,3,3,3,1,3,3,1,3,3,3,3,3,3],
+  [3,3,3,1,3,3,3,2,3,3,1,3,3,3,3,1,3,3,3,3,3,3,1,3,3,1,3,3,3,3,3,3],
+  [3,3,3,3,1,3,3,3,3,1,1,3,3,3,3,3,1,3,3,3,3,1,1,3,1,1,3,3,3,3,3,3], // Road kinks right
+  [3,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3], // Mackey Rd (offset)
+  [3,3,3,3,3,1,2,2,2,2,1,5,5,5,5,5,5,1,2,2,2,2,2,1,3,3,3,3,3,3,3,3], // pond 6wide
+  [3,3,3,3,3,1,2,2,2,2,1,5,5,5,5,5,5,1,2,2,2,2,2,1,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,1,2,2,2,2,1,5,5,5,5,5,5,1,2,2,2,2,2,1,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,1,2,2,2,2,1,5,5,5,5,5,5,1,2,2,2,2,2,1,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,1,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,1,3,3,3,3,3,3,3,3],
+  [3,3,3,3,1,1,3,3,3,1,1,3,3,3,3,3,3,1,3,3,3,3,1,1,3,3,3,3,3,3,3,3], // road jogs
+  [3,3,3,3,1,3,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,1,3,3,3,3,3,3,3,3],
+  [3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3],
+  [3,3,3,3,1,2,2,5,5,2,1,2,2,2,2,2,2,2,1,2,2,5,5,2,1,3,3,3,3,3,3,3],
+  [3,3,3,3,1,2,2,5,5,2,1,2,2,2,2,2,2,2,1,2,2,5,5,2,1,3,3,3,3,3,3,3],
+  [3,3,3,3,1,2,2,2,2,2,1,2,2,2,2,2,2,2,1,2,2,2,2,2,1,3,3,3,3,3,3,3],
+  [3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3],
+  [3,3,3,3,3,1,3,3,3,3,1,3,3,3,3,3,3,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,1,3,2,3,3,1,3,3,3,3,3,3,1,3,3,2,3,3,3,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3],
+  [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+];
+
+// Landmarks: {id, x, y, label, color, icon, onInteract}
+const LANDMARKS = [
+  { id:'statue', tx:7,  ty:4,  label:'傑拉德威雕像', color:'#c8a878', icon:'🗿' },
+  { id:'cinema', tx:18, ty:4,  label:'電影院',        color:'#6644aa', icon:'🎬' },
+  { id:'church', tx:22, ty:8,  label:'教堂',          color:'#4466aa', icon:'⛪' },
+  { id:'studio', tx:6,  ty:8,  label:'工作室',        color:'#884422', icon:'🎨' },
+  { id:'art40',  tx:6,  ty:16, label:'40號美術社',    color:'#228844', icon:'🖼' },
+  { id:'konbini',tx:19, ty:16, label:'超商',          color:'#228866', icon:'🏪' },
+  { id:'music',  tx:6,  ty:24, label:'樂器行',        color:'#664488', icon:'🎸' },
+  { id:'pond',   tx:13, ty:13, label:'張雅塘',        color:'#2244aa', icon:'🐸' }, // center of 6-wide pond
+  { id:'airport',tx:18, ty:24, label:'機場',          color:'#446688', icon:'✈' },
+  { id:'pond2',  tx:7,  ty:20, label:'西邊小池塘',    color:'#225588', icon:'💧' },
+  { id:'pond3',  tx:21, ty:20, label:'東邊小池塘',    color:'#225588', icon:'💧' },
+];
+
+// Road sign labels (drawn on map)
+const ROAD_LABELS = [
+  { tx:6, ty:5, text:'傑拉德路' },
+  { tx:6, ty:10, text:'麥基路' },
+];
+
+// NPC definitions
+const NPC_DEFS = {
+  zhen: { name:'陣恩延', color:'#f5b8d0', bodyColor:'#5090e0', size:14, defaultPositions:[[6,4],[9,6],[19,11],[5,13],[14,22]] },
+  gangge: { name:'港哥', color:'#ff8844', bodyColor:'#cc4400', size:14, wandering:true },
+  n679: { name:'679', color:'#ffd080', bodyColor:'#226622', size:13 },
+  rong: { name:'蓉蓉', color:'#80d0ff', bodyColor:'#4080b0', size:12 },
+  kuma: { name:'Kuma', color:'#cc8844', bodyColor:'#884422', size:14 },
+  kotsu: { name:'高捷蛙', color:'#22cc44', bodyColor:'#118833', size:10 }, // roaming frog NPC
+  raicho: { name:'雷鳥', color:'#ffdd44', bodyColor:'#cc8800', size:11 }, // thunderbird NPC
+};
+
+// Items
+const ITEMS_DB = {
+  pen:      { name:'筆', icon:'✏', price:20, eff:'設計+1', type:'create' },
+  bento:    { name:'一般便當', icon:'🍱', price:110, eff:'心情+3 飽腹+1.5', moodUp:3, favorUp:4, fullUp:1.5, type:'food' },
+  ijian:    { name:'i珍食便當', icon:'🥡', price:60, eff:'心情+5 飽腹+1.5', moodUp:5, favorUp:3, fullUp:1.5, type:'food', mondayOnly:true },
+  drink_tht:{ name:'特好喝飲料', icon:'🧋', price:45, eff:'心情+2 飽腹+0.5', moodUp:2, favorUp:3, fullUp:0.5, type:'food' },
+  drink_coco:{ name:'COCO飲料', icon:'🥤', price:45, eff:'心情+2 飽腹+0.5', moodUp:2, favorUp:2, fullUp:0.5, type:'food' },
+  methanol: { name:'甲醇(假酒)', icon:'🍶', price:90, eff:'⚠心情-20', moodUp:-20, favorUp:-5, type:'food', danger:true },
+  vodka:    { name:'伏特加', icon:'🍸', price:90, eff:'心情+8', moodUp:8, favorUp:10, type:'food' },
+  s_rice:   { name:'南部肉燥飯', icon:'🍚', price:35, eff:'心情+3 飽腹+1', moodUp:3, favorUp:5, fullUp:1, type:'food', zhenResponse:'這才是真正的肉燥飯！' },
+  n_rice:   { name:'北部滷肉飯', icon:'🍜', price:45, eff:'心情+2 飽腹+1', moodUp:2, favorUp:-2, fullUp:1, type:'food', zhenResponse:'你根本不懂真正的食物。' },
+  noodle:   { name:'學姊涼麵', icon:'🍝', price:60, eff:'心情-2 飽腹+1', moodUp:-2, favorUp:-10, fullUp:1, type:'food', zhenResponse:'你是腦袋需要重製嗎？' },
+  tablet:   { name:'液晶繪圖板', icon:'🖥', price:800, eff:'設計+4 心情+10', type:'create', oneUse:true },
+  ptablet:  { name:'平板', icon:'📱', price:600, eff:'設計+3 心情+5', type:'create', oneUse:true },
+  portable: { name:'隨身播放器', icon:'🎧', price:200, eff:'心情+3', type:'other' },
+  cd:       { name:'CD', icon:'💿', price:80, eff:'心情+2', type:'other' },
+  feather:  { name:'夜露羽毛', icon:'🪶', price:0, eff:'心情+1', favorUp:3, type:'other' },
+  sniper:   { name:'大狙', icon:'🔫', price:500, eff:'戰鬥+4', type:'weapon' },
+  fish:     { name:'池塘的魚', icon:'🐟', price:0, eff:'可給Kuma加工', type:'other' },
+  waterweed:{ name:'水草', icon:'🌿', price:0, eff:'或許有用？', type:'other' },
+  // 40號美術社 art supplies
+  watercolor:{ name:'水彩顏料', icon:'🎨', price:80, eff:'設計+2 心情+1', type:'create' },
+  canvas:   { name:'畫布', icon:'🖼', price:150, eff:'設計+3', type:'create' },
+  charcoal: { name:'炭筆', icon:'🖊', price:40, eff:'設計+1', type:'create' },
+  palette:  { name:'調色盤', icon:'🔵', price:60, eff:'設計+2', type:'create' },
+  ink:      { name:'墨水', icon:'🖋', price:35, eff:'設計+1 心情+1', type:'create' },
+  sketchbook:{ name:'素描本', icon:'📒', price:90, eff:'設計+2 心情+1', type:'create' },
+  blackpaint:{ name:'黑皮塗料', icon:'🖌', price:120, eff:'擼黑皮用！心情+1', type:'special' },
+  kumaFood: { name:'Kuma神祕料理', icon:'🍲', price:0, eff:'心情+1 飽腹+0.5', type:'food', fullUp:0.5, moodUp:1 },
+};
+
+// All achievements
+const ALL_ACH = [
+  { id:'valo_win',   icon:'🏆', name:'你也是瓦學妹？', desc:'擊敗最終Boss', secret:false },
+  { id:'true_a',     icon:'⭐', name:'看清世界', desc:'設計100+被罵醜5次離開延恩鎮', secret:true },
+  { id:'true_b',     icon:'🏪', name:'超商之神', desc:'成為679的同事', secret:true },
+  { id:'true_c',     icon:'🎮', name:'電競仔', desc:'沉迷打遊戲不出門', secret:true },
+  { id:'good_end',   icon:'💕', name:'延恩鎮的戀愛故事', desc:'好結局達成', secret:false },
+  { id:'drunk_die',  icon:'💀', name:'嗜酒成性', desc:'喝甲醇死亡', secret:false },
+  { id:'love_mrt',   icon:'🐸', name:'愛高捷', desc:'釣到20隻高捷蛙', secret:false },
+  { id:'love679',    icon:'😤', name:'來自679的忌妒', desc:'釣到20隻高捷蛙（679視角）', secret:false },
+  { id:'masochist',  icon:'😖', name:'抖M', desc:'被港哥罵10次', secret:false },
+  { id:'design_dog', icon:'🐕', name:'你是設計的狗嗎？', desc:'被港哥罵20次', secret:false },
+  { id:'fisherman',  icon:'🎣', name:'池塘探索家', desc:'釣魚20次', secret:false },
+  { id:'social_god', icon:'🗣', name:'社交達人', desc:'社交達到80', secret:false },
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let G = {
+  day:1, dow:1, phase:0, // 0=day,1=eve,2=night
+  money:0, actLeft:3, actToday:[],
+  design:10, social:10, combat:10, mood:50, zMood:50, favor:0,
+  fullness:3, // 飽腹度 0~6, 每日需>=3
+  weather: 'sunny', // 'sunny','cloudy','drizzle','storm'
+  weatherMoodMod: 0, // mood modifier per positive action
+  daysSinceZhen:0, statueUses:0, gameCount:0, shop679:0,
+  consecutiveCreate:0,
+  frogCount:0, fishCount:0, ganggeScold:0,
+  inventory:[
+    { id:'pen', count:3 },
+    { id:'bento', count:1 },
+  ],
+  achievements: JSON.parse(localStorage.getItem('yen_ach') || '[]'),
+  npcPos: {
+    zhen: { tx:7, ty:4 },
+    gangge: { tx:9, ty:4, dir:1, timer:0 },
+    n679: { tx:19, ty:16 },
+    rong: { tx:13, ty:13 }, // pond center
+    kuma: { tx:20, ty:19 },
+  },
+  player: { tx:13, ty:10, dir:0 },
+};
+
+let moveInterval = null;
+let moveDir = null;
+let canvas, ctx, vpW, vpH;
+let camX=0, camY=0;
+let nearbyNPC = null;
+let selectedInvItem = null;
+let cState = {}; // combat state
+
+const DAYS = ['','週一','週二','週三','週四','週五','週六','週日'];
+const TIMES = ['☀ 白天','🌅 傍晚','🌙 夜晚'];
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ============================================================
+// SAVE / LOAD
+// ============================================================
+function saveGame() {
+  const save = {
+    G: JSON.parse(JSON.stringify(G)),
+    ts: Date.now()
+  };
+  localStorage.setItem('yen_save', JSON.stringify(save));
+  notify('💾 存檔成功！');
+}
+
+function loadSave() {
+  const raw = localStorage.getItem('yen_save');
+  if (!raw) { notify('找不到存檔', 'var(--red)'); return; }
+  const save = JSON.parse(raw);
+  G = save.G;
+  // Merge achievements from storage
+  G.achievements = JSON.parse(localStorage.getItem('yen_ach') || '[]');
+  // Reset movement state to prevent stuck movement bug
+  moveInterval = null;
+  moveDir = null;
+  startGame();
+  notify('📂 讀取存檔成功！');
+}
+
+let gameLoopRunning = false;
+
+function startGame() {
+  showScreen('scr-game');
+  initCanvas();
+  updateNPCPositions();
+  startNPCWander();
+  updateHUD();
+  setDlg('延恩鎮','歡迎來到延恩鎮！傑拉德路和麥基路交織在市中心。用方向鍵移動，靠近NPC後按【A】互動。');
+  if (!gameLoopRunning) {
+    gameLoopRunning = true;
+    requestAnimationFrame(gameLoop);
+  }
+}
+
+// ============================================================
+// CANVAS / MAP RENDERING
+// ============================================================
+function initCanvas() {
+  canvas = document.getElementById('map-canvas');
+  const vp = document.getElementById('map-viewport');
+  vpW = vp.clientWidth;
+  vpH = vp.clientHeight;
+  canvas.width = vpW;
+  canvas.height = vpH;
+  ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+}
+
+function gameLoop() {
+  if (!document.getElementById('scr-game').classList.contains('active')) {
+    gameLoopRunning = false;
+    return;
+  }
+  updateCamera();
+  drawMap();
+  drawLandmarks();
+  drawNPCs();
+  drawPlayer();
+  checkNearby();
+  requestAnimationFrame(gameLoop);
+}
+
+function updateCamera() {
+  const px = G.player.tx * TILE + TILE/2;
+  const py = G.player.ty * TILE + TILE/2;
+  camX = Math.max(0, Math.min(MAP_W*TILE - vpW, px - vpW/2));
+  camY = Math.max(0, Math.min(MAP_H*TILE - vpH, py - vpH/2));
+}
+
+function drawMap() {
+  ctx.clearRect(0,0,vpW,vpH);
+  for (let y=0; y<MAP_H; y++) {
+    for (let x=0; x<MAP_W; x++) {
+      const t = MAP[y][x];
+      const sx = x*TILE - camX;
+      const sy = y*TILE - camY;
+      if (sx > vpW+TILE || sy > vpH+TILE || sx < -TILE || sy < -TILE) continue;
+
+      // Base tile
+      ctx.fillStyle = TILE_COLORS[t];
+      ctx.fillRect(sx, sy, TILE, TILE);
+
+      // Grid lines for roads
+      if (t === T.ROAD) {
+        ctx.strokeStyle = 'rgba(100,100,160,0.2)';
+        ctx.strokeRect(sx, sy, TILE, TILE);
+        // dashes
+        ctx.fillStyle = 'rgba(255,220,50,0.15)';
+        if (x > 0 && MAP[y][x-1] === T.ROAD) ctx.fillRect(sx+TILE/2-1, sy+TILE/2-1, 2, 2);
+      }
+      if (t === T.PARK) {
+        // Radish sprites
+        ctx.fillStyle = '#4a9a33';
+        ctx.fillRect(sx+4, sy+4, 6, 8);
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(sx+5, sy+10, 4, 8);
+      }
+      if (t === T.POND) {
+        // Animated water shimmer
+        const t2 = Date.now()/1000;
+        ctx.fillStyle = `rgba(50,120,200,${0.4+Math.sin(t2+x*0.5+y)*0.2})`;
+        ctx.fillRect(sx+2, sy+2, TILE-4, TILE-4);
+        // lily pad
+        if ((x+y)%3===0) { ctx.fillStyle='#2a6a2a'; ctx.fillRect(sx+8,sy+8,8,6); }
+      }
+    }
+  }
+
+  // Road labels
+  ROAD_LABELS.forEach(rl => {
+    const sx = rl.tx*TILE - camX;
+    const sy = rl.ty*TILE - camY;
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.fillStyle = 'rgba(200,200,120,0.7)';
+    ctx.fillText(rl.text, sx, sy+12);
+  });
+
+  // Night overlay
+  if (G.phase === 2) {
+    ctx.fillStyle = 'rgba(0,0,20,0.45)';
+    ctx.fillRect(0,0,vpW,vpH);
+  } else if (G.phase === 1) {
+    ctx.fillStyle = 'rgba(60,40,0,0.2)';
+    ctx.fillRect(0,0,vpW,vpH);
+  }
+
+  // Weather overlay
+  if (G.weather === 'storm') {
+    ctx.fillStyle = 'rgba(0,0,30,0.22)';
+    ctx.fillRect(0,0,vpW,vpH);
+  } else if (G.weather === 'cloudy') {
+    ctx.fillStyle = 'rgba(10,10,20,0.10)';
+    ctx.fillRect(0,0,vpW,vpH);
+  }
+
+  // Rain drops animation
+  if (G.weather === 'drizzle' || G.weather === 'storm') {
+    const dropCount = G.weather === 'storm' ? 55 : 22;
+    const t3 = (Date.now()/80) % vpH;
+    ctx.strokeStyle = G.weather === 'storm' ? 'rgba(160,190,255,0.55)' : 'rgba(160,190,255,0.28)';
+    ctx.lineWidth = G.weather === 'storm' ? 1.5 : 1;
+    for (let i=0; i<dropCount; i++) {
+      const rx = (i*137.5) % vpW;
+      const ry = (i*89.3 + t3) % vpH;
+      ctx.beginPath();
+      ctx.moveTo(rx, ry);
+      ctx.lineTo(rx - 1, ry + 9);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawLandmarks() {
+  LANDMARKS.forEach(lm => {
+    const sx = lm.tx*TILE - camX;
+    const sy = lm.ty*TILE - camY;
+    if (sx > vpW+TILE*2 || sy > vpH+TILE*2 || sx < -TILE*2 || sy < -TILE*2) return;
+
+    // 張雅塘 landmark is drawn 4x bigger
+    const isPond = lm.id === 'pond';
+    const size = isPond ? TILE*4 : TILE;
+    const offsetX = isPond ? -TILE*1.5 : 0;
+    const offsetY = isPond ? -TILE*1.5 : 0;
+
+    // Building background
+    ctx.fillStyle = lm.color + '44';
+    ctx.fillRect(sx+offsetX-2, sy+offsetY-2, size+4, size+4);
+    ctx.strokeStyle = lm.color;
+    ctx.lineWidth = isPond ? 3 : 2;
+    ctx.strokeRect(sx+offsetX-2, sy+offsetY-2, size+4, size+4);
+
+    // Icon (emoji)
+    ctx.font = isPond ? '48px sans-serif' : '18px sans-serif';
+    ctx.fillText(lm.icon, sx+offsetX+size/2-20, sy+offsetY+size/2+12);
+
+    // Label
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.fillStyle = '#ffffc0';
+    const tl = lm.label;
+    ctx.fillText(tl.substring(0,6), sx+offsetX-4, sy+offsetY-6);
+  });
+}
+
+function drawNPCs() {
+  Object.entries(G.npcPos).forEach(([id, pos]) => {
+    const def = NPC_DEFS[id];
+    if (!def) return;
+    const sx = pos.tx*TILE - camX;
+    const sy = pos.ty*TILE - camY;
+    if (sx > vpW+64 || sy > vpH+64 || sx < -64 || sy < -64) return;
+
+    // Special: raicho 雷鳥 draws as a pixel thunderbird
+    if (id === 'raicho') {
+      const fx = sx + TILE/2 - 8;
+      const fy = sy + TILE/2 - 6;
+      // Body
+      ctx.fillStyle = '#ffdd44';
+      ctx.fillRect(fx, fy+2, 16, 10);
+      // Wing tips
+      ctx.fillStyle = '#cc8800';
+      ctx.fillRect(fx-4, fy+4, 6, 5);
+      ctx.fillRect(fx+14, fy+4, 6, 5);
+      // Head
+      ctx.fillStyle = '#ffee88';
+      ctx.fillRect(fx+5, fy-3, 7, 7);
+      // Beak
+      ctx.fillStyle = '#ff8800';
+      ctx.fillRect(fx+12, fy, 3, 2);
+      // Eye
+      ctx.fillStyle = '#000';
+      ctx.fillRect(fx+8, fy-1, 2, 2);
+      // Lightning bolt decoration
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(fx+3, fy+4, 2, 4);
+      ctx.fillRect(fx+5, fy+6, 2, 4);
+      // Name
+      ctx.font = '6px "Press Start 2P", monospace';
+      ctx.fillStyle = '#ffdd44';
+      ctx.fillText('雷鳥', fx+1, fy-6);
+      return;
+    }
+    if (id === 'kotsu') {
+      const fx = sx + TILE/2 - 6;
+      const fy = sy + TILE/2 - 4;
+      ctx.fillStyle = '#22cc44';
+      ctx.fillRect(fx, fy, 12, 8);
+      ctx.fillStyle = '#118833';
+      ctx.fillRect(fx-2, fy+4, 4, 4);
+      ctx.fillRect(fx+10, fy+4, 4, 4);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(fx+2, fy+1, 2, 2);
+      ctx.fillRect(fx+8, fy+1, 2, 2);
+      ctx.font = '6px "Press Start 2P", monospace';
+      ctx.fillStyle = '#22cc44';
+      ctx.fillText('高捷蛙', fx-4, fy-3);
+      return;
+    }
+
+    // Pixel character
+    const px = sx + TILE/2 - 7;
+    const py = sy + TILE/2 - 14;
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(px+2, py+26, 12, 4);
+
+    // Head
+    ctx.fillStyle = def.color;
+    ctx.fillRect(px+2, py, 10, 9);
+    // Eyes
+    ctx.fillStyle = '#000';
+    ctx.fillRect(px+4, py+3, 2, 2);
+    ctx.fillRect(px+8, py+3, 2, 2);
+    // Body
+    ctx.fillStyle = def.bodyColor;
+    ctx.fillRect(px, py+9, 14, 10);
+    // Legs
+    ctx.fillStyle = def.bodyColor;
+    ctx.fillRect(px+1, py+19, 5, 7);
+    ctx.fillRect(px+8, py+19, 5, 7);
+
+    // Name tag
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.fillStyle = '#f7d94c';
+    const lw = ctx.measureText(def.name).width;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(px + 7 - lw/2 - 2, py - 12, lw + 4, 10);
+    ctx.fillStyle = '#f7d94c';
+    ctx.fillText(def.name, px + 7 - lw/2, py - 4);
+
+    // Port-ge sighing animation
+    if (id === 'gangge') {
+      const t2 = Date.now()/1000;
+      if (Math.sin(t2*0.8) > 0.7) {
+        ctx.font = '10px sans-serif';
+        ctx.fillText('...', px+14, py-10);
+      }
+    }
+  });
+}
+
+function drawPlayer() {
+  const px2 = G.player.tx*TILE - camX + TILE/2 - 8;
+  const py2 = G.player.ty*TILE - camY + TILE/2 - 14;
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(px2+2, py2+26, 12, 4);
+
+  // Body
+  const bob = Math.sin(Date.now()/200) * 1.5 * (moveDir ? 1 : 0);
+  ctx.fillStyle = '#f5d080'; // head
+  ctx.fillRect(px2+2, py2+bob, 10, 9);
+  // Eyes based on dir
+  ctx.fillStyle = '#000';
+  if (G.player.dir===0||G.player.dir===2||G.player.dir===3) {
+    ctx.fillRect(px2+4, py2+3+bob, 2, 2);
+    ctx.fillRect(px2+8, py2+3+bob, 2, 2);
+  }
+  // Body
+  ctx.fillStyle = '#5566dd';
+  ctx.fillRect(px2, py2+9+bob, 14, 10);
+  // Legs
+  const legL = Math.sin(Date.now()/150)*3;
+  ctx.fillStyle = '#3344aa';
+  ctx.fillRect(px2+1, py2+19+bob+legL, 5, 7);
+  ctx.fillRect(px2+8, py2+19+bob-legL, 5, 7);
+
+  // "You" label
+  ctx.font = '6px "Press Start 2P", monospace';
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(px2-2, py2-12, 18, 10);
+  ctx.fillStyle = '#60d0ff';
+  ctx.fillText('YOU', px2+1, py2-4);
+}
+
+// ============================================================
+// MOVEMENT
+// ============================================================
+function startMove(dir) {
+  if (moveInterval) return;
+  moveDir = dir;
+  moveOnce(dir);
+  moveInterval = setInterval(() => moveOnce(dir), 150);
+}
+function stopMove() {
+  clearInterval(moveInterval);
+  moveInterval = null;
+  moveDir = null;
+}
+
+function moveOnce(dir) {
+  let nx = G.player.tx, ny = G.player.ty;
+  if (dir === 'up') { ny--; G.player.dir=1; }
+  else if (dir === 'down') { ny++; G.player.dir=0; }
+  else if (dir === 'left') { nx--; G.player.dir=2; }
+  else if (dir === 'right') { nx++; G.player.dir=3; }
+
+  if (nx < 0 || nx >= MAP_W || ny < 0 || ny >= MAP_H) return;
+  const tile = MAP[ny][nx];
+  if (tile === T.BUILDING || tile === T.WATER) return; // can't walk into buildings or deep water
+  G.player.tx = nx;
+  G.player.ty = ny;
+  updateLocationBadge();
+}
+
+document.addEventListener('keydown', e => {
+  const m = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+  if (m[e.key]) { e.preventDefault(); startMove(m[e.key]); }
+  if (e.key === ' ' || e.key === 'z' || e.key === 'Z') interact();
+});
+document.addEventListener('keyup', e => {
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) stopMove();
+});
+
+function updateLocationBadge() {
+  // Find nearest landmark
+  let nearest = null, minD = 999;
+  LANDMARKS.forEach(lm => {
+    const d = Math.abs(lm.tx - G.player.tx) + Math.abs(lm.ty - G.player.ty);
+    if (d < minD) { minD = d; nearest = lm; }
+  });
+  const badge = document.getElementById('loc-badge');
+  if (nearest && minD <= 3) badge.textContent = nearest.label;
+  else badge.textContent = '延恩鎮';
+}
+
+// ============================================================
+// NPC MOVEMENT & WANDER
+// ============================================================
+function updateNPCPositions() {
+  // 陣恩延 - random position, night → studio more likely
+  const isNight = G.phase === 2;
+  if (isNight && Math.random() < 0.6) {
+    G.npcPos.zhen = { tx:5, ty:7 }; // studio
+  } else {
+    const opts = NPC_DEFS.zhen.defaultPositions;
+    const pick = opts[Math.floor(Math.random()*opts.length)];
+    G.npcPos.zhen = { tx:pick[0], ty:pick[1] };
+  }
+
+  // 679 - work hours at konbini
+  const dow = G.dow, hour = G.phase;
+  if (dow === 2) {
+    G.npcPos.n679 = { tx: 4+Math.floor(Math.random()*20), ty:6 };
+  } else if (hour === 0 || hour === 1) {
+    G.npcPos.n679 = { tx:19, ty:16 };
+  } else {
+    G.npcPos.n679 = { tx: 5+Math.floor(Math.random()*18), ty:5+Math.floor(Math.random()*18) };
+    let attempts = 0;
+    while (MAP[G.npcPos.n679.ty] && MAP[G.npcPos.n679.ty][G.npcPos.n679.tx] === T.BUILDING && attempts < 20) {
+      G.npcPos.n679.tx = 5+Math.floor(Math.random()*18);
+      G.npcPos.n679.ty = 5+Math.floor(Math.random()*18);
+      attempts++;
+    }
+  }
+
+  // 高捷蛙 - 10% chance to spawn on road each turn
+  if (Math.random() < 0.10) {
+    const roadTiles = [];
+    for (let ry=1; ry<MAP_H-1; ry++) for (let rx=1; rx<MAP_W-1; rx++) {
+      if (MAP[ry][rx] === T.ROAD) roadTiles.push([rx,ry]);
+    }
+    const pick = roadTiles[Math.floor(Math.random()*roadTiles.length)];
+    G.npcPos.kotsu = { tx:pick[0], ty:pick[1] };
+  } else {
+    delete G.npcPos.kotsu;
+  }
+
+  // 雷鳥 - 20% chance to spawn on road each turn
+  if (Math.random() < 0.20) {
+    const roadTiles = [];
+    for (let ry=1; ry<MAP_H-1; ry++) for (let rx=1; rx<MAP_W-1; rx++) {
+      if (MAP[ry][rx] === T.ROAD) roadTiles.push([rx,ry]);
+    }
+    const pick = roadTiles[Math.floor(Math.random()*roadTiles.length)];
+    G.npcPos.raicho = { tx:pick[0], ty:pick[1] };
+  } else {
+    delete G.npcPos.raicho;
+  }
+}
+
+function startNPCWander() {
+  setInterval(() => {
+    // 港哥 wanders in center plaza area
+    const gg = G.npcPos.gangge;
+    if (!gg) return;
+    const dirs = [[0,1],[0,-1],[1,0],[-1,0],[0,0],[0,0]];
+    const d = dirs[Math.floor(Math.random()*dirs.length)];
+    const nx = Math.max(5, Math.min(14, gg.tx + d[0]));
+    const ny = Math.max(1, Math.min(6, gg.ty + d[1]));
+    if (MAP[ny] && MAP[ny][nx] !== T.BUILDING) {
+      gg.tx = nx; gg.ty = ny;
+    }
+  }, 1200);
+}
+
+// ============================================================
+// PROXIMITY / INTERACT
+// ============================================================
+function checkNearby() {
+  nearbyNPC = null;
+  const px = G.player.tx, py = G.player.ty;
+  const prompt = document.getElementById('interact-prompt');
+
+  // Check NPCs
+  const npcs = Object.entries(G.npcPos);
+  for (const [id, pos] of npcs) {
+    const d = Math.abs(pos.tx-px) + Math.abs(pos.ty-py);
+    if (d <= 1) { nearbyNPC = id; break; }
+  }
+
+  // Check landmarks (pond gets extra radius because it's big)
+  let nearLM = null;
+  LANDMARKS.forEach(lm => {
+    const radius = lm.id === 'pond' ? 4 : 2;
+    const d = Math.abs(lm.tx-px) + Math.abs(lm.ty-py);
+    if (d <= radius) nearLM = lm;
+  });
+
+  if (nearbyNPC || nearLM) {
+    const name = nearbyNPC ? (NPC_DEFS[nearbyNPC]?.name || nearbyNPC) : (nearLM?.label || '');
+    const sx = (nearbyNPC ? G.npcPos[nearbyNPC].tx : nearLM.tx)*TILE - camX;
+    const sy = (nearbyNPC ? G.npcPos[nearbyNPC].ty : nearLM.ty)*TILE - camY;
+    prompt.style.display = 'block';
+    prompt.style.left = Math.max(4, Math.min(vpW-100, sx)) + 'px';
+    prompt.style.top = Math.max(4, sy - 20) + 'px';
+    prompt.textContent = '▲ ' + name;
+    if (!nearbyNPC) nearbyNPC = '__lm__' + nearLM.id;
+  } else {
+    prompt.style.display = 'none';
+  }
+}
+
+function interact() {
+  if (!nearbyNPC) return;
+  stopMove(); // stop movement when opening dialogue to prevent stuck-moving bug
+  if (nearbyNPC === 'zhen') interactZhen();
+  else if (nearbyNPC === 'gangge') interactGangGe();
+  else if (nearbyNPC === 'n679') interact679();
+  else if (nearbyNPC === 'rong') interactRong();
+  else if (nearbyNPC === 'kuma') interactKuma();
+  else if (nearbyNPC === 'kotsu') interactKotsu();
+  else if (nearbyNPC === 'raicho') interactRaicho();
+  else if (nearbyNPC.startsWith('__lm__')) {
+    const lmId = nearbyNPC.replace('__lm__','');
+    interactLandmark(lmId);
+  }
+}
+
+// ============================================================
+// NPC INTERACTIONS
+// ============================================================
+function interactZhen() {
+  stopMove(); // prevent movement lock
+  G.daysSinceZhen = 0;
+  // Zhen dialogue is FREE — no action cost
+  const roll = Math.random();
+
+  if (roll < 0.15 && G.dow === 1 && G.phase <= 1) {
+    setDlg('陣恩延', '晚餐要吃什麼，還是要等8點去買i珍食？', [
+      { t:'吃點好的吧', fn:()=>{ changeStat('favor',1); setDlg('陣恩延','陣恩延：「也好，今天難得。」\n\n陣恩延看著窗外，表情有點輕鬆。'); } },
+      { t:'好啊', fn:()=>{ changeStat('favor',2); setDlg('陣恩延','陣恩延露出滿意的微笑：「那就一起去！」\n\n你們約好一起去買，氣氛很好。'); } },
+      { t:'那一起去？', fn:()=>{ changeStat('favor',4); changeStat('social',1); setDlg('陣恩延','陣恩延：「！...好啊。」\n臉微微紅了。\n\n你們一起走去i珍食，一路上話不少。'); } },
+    ]);
+  } else if (roll < 0.3) {
+    setDlg('陣恩延', '你會分滷肉飯跟肉燥飯嗎？', [
+      { t:'肉燥飯', fn:()=>{ changeStat('favor',5); setDlg('陣恩延','陣恩延眼睛一亮：「！！對！就是肉燥飯！你懂的！\n台北人說的滷肉飯根本是另一道菜！\n不是同一個東西！真的！」\n\n你們聊了好一會兒。'); } },
+      { t:'滷肉飯', fn:()=>{ changeStat('favor',-2); setDlg('陣恩延','陣恩延皺眉：「...你是台北人嗎？」\n\n對話陷入了尷尬的沉默。'); } },
+      { t:'我不知道', fn:()=>{ setDlg('陣恩延','陣恩延嘆了口氣：「這個很重要，你要分清楚。\n南部的肉燥飯和台北的完全是兩種東西。」'); } },
+    ]);
+  } else if (roll < 0.45 && G.favor >= 50) {
+    const lines = [
+      '你今天設計了什麼嗎？',
+      '台北的設計風格和台中真的差很多。',
+      '你有聽電子音樂嗎？教堂的Techno版聖歌很有感覺。',
+      '延恩鎮很小，但還是比其他區有趣。',
+      '今天上課超累的...你有沒有什麼解壓方式？',
+    ];
+    setDlg('陣恩延', lines[Math.floor(Math.random()*lines.length)], [
+      { t:'繼續聊', fn:()=>{ changeStat('favor',1); changeStat('social',1); setDlg('陣恩延','你們聊了一下，陣恩延看起來心情好了一點。'); } },
+      { t:'送她便當（需背包有便當）', fn:()=>{ giveToZhen('bento'); } },
+    ]);
+    changeStat('favor',1); changeStat('social',1);
+  } else {
+    let favorDelta = 1;
+    let txt = '你找到了陣恩延說話。';
+    if (G.mood >= 80) { favorDelta++; txt += '\n你心情很好，聊天特別順暢！'; }
+    if (G.mood < 0) { favorDelta--; txt += '\n你心情不太好，說話有點語無倫次...'; }
+    if (G.zMood < -30) { favorDelta = -1; txt = '陣恩延（冷淡）：「現在不想說話。」'; }
+
+    setDlg('陣恩延', txt, [
+      { t:'認同台北物價高有道理', fn:()=>{ changeStat('favor',3); setDlg('陣恩延','陣恩延：「對吧！台北品質就是不一樣！\n你看延恩鎮這邊，很多店真的都值得。」'); } },
+      { t:'展示設計作品', fn:()=>{
+        if (G.design>=50) { changeStat('favor',4); setDlg('陣恩延','陣恩延：「這個構圖不錯，色彩感也很好。\n你最近有進步喔。」'); }
+        else setDlg('陣恩延','陣恩延：「還需要多練習。\n線條還不夠穩，不過方向對了。」');
+      }},
+      { t:'嘲諷台中比較落後', fn:()=>{ changeStat('favor',3); setDlg('陣恩延','陣恩延得意地笑了：「可不是嘛！\n哈哈雖然這樣說不太好啦。」'); } },
+      { t:'一起打瓦羅蘭', fn:()=>{ changeStat('favor',2); changeStat('combat',1); setDlg('陣恩延','陣恩延：「好啊！不過我不打算輸！\n今天你當我的隊友，不許躺。」'); } },
+      { t:'斗內陣恩延', fn:()=>{ showDonateMenu(); } },
+    ]);
+    changeStat('favor', favorDelta);
+    changeStat('social', 1);
+  }
+  checkEndingConditions();
+}
+
+function doArt40Work() {
+  if (G.actLeft < 3) {
+    notify('打工需要3點完整行動值！','var(--red)');
+    setDlg('40號美術社打工', '老闆說要打一整天的工才行。\n你今天行動值不夠了，明天再來吧！');
+    return;
+  }
+  G.actLeft = 0;
+  G.phase = 2;
+  G.actToday.push('art40Work');
+  changeStat('money', 100);
+  changeStat('design', 1);
+  setDlg('40號美術社打工', '你在40號美術社幫忙整理商品、招待客人。\n忙了一整天！老闆給了你薪水，\n還傳授了一些美術知識！\n\n+$100，繪圖技能+1\n（今日行動全部耗盡）');
+  notify('+$100 +設計1（美術社打工！）', 'var(--green)');
+  updateHUD();
+}
+
+function showDonateMenu() {
+  setDlg('斗內陣恩延', '你想要斗內多少錢給陣恩延？\n（斗內金額 × 0.05 = 好感增加）', [
+    { t:'斗內 $50（+好感2.5）', fn:()=>{ donateTo(50); } },
+    { t:'斗內 $100（+好感5）', fn:()=>{ donateTo(100); } },
+    { t:'斗內 $300（+好感15）', fn:()=>{ donateTo(300); } },
+    { t:'斗內 $500（+好感25）', fn:()=>{ donateTo(500); } },
+  ]);
+}
+
+function donateTo(amount) {
+  if (G.money < amount) { notify('錢不夠！','var(--red)'); return; }
+  changeStat('money', -amount);
+  const gain = Math.round(amount * 0.05);
+  changeStat('favor', gain);
+  changeStat('zMood', Math.floor(gain/2));
+  setDlg('陣恩延', `你斗內了 $${amount} 給陣恩延！\n\n陣恩延：「這...幹嘛啦！謝謝...」\n臉微微泛紅。\n\n好感+${gain}，陣恩延心情+${Math.floor(gain/2)}`);
+  notify(`+好感${gain}（斗內！）`, 'var(--pink)');
+}
+
+function interactGangGe() {
+  setDlg('港哥（真理之口）', '石像嘆了口氣...「呼...」\n港哥靜靜地看著你。', [
+    { t:'丟作品給港哥', fn: submitToGangGe },
+    { t:'閒聊', fn:()=>{ changeStat('mood',1); setDlg('港哥','港哥再度嘆氣...「呼...」然後繼續走開了。'); } },
+  ]);
+}
+
+function submitToGangGe() {
+  if (!useAction()) return;
+  G.statueUses++;
+  G.ganggeScold++;
+  if (G.design < 70) {
+    changeStat('design', 2); changeStat('mood', -1);
+    setDlg('港哥','港哥看了你的作品，緩緩開口：\n\n「醜。」\n\n儘管如此，你的設計能力確實提升了。');
+    notify('+設計2 -心情1（港哥說醜）','var(--red)');
+  } else {
+    changeStat('design', 1); changeStat('mood', 4);
+    setDlg('港哥','港哥罕見地點了點頭：\n\n「還行。」\n\n這句話讓你心情大好！');
+    notify('+設計1 +心情4（港哥說還行！）','var(--green)');
+  }
+  // Achievements
+  if (G.ganggeScold >= 10) unlockAch('masochist');
+  if (G.ganggeScold >= 20) unlockAch('design_dog');
+  checkEndingConditions();
+}
+
+function interact679() {
+  G.shop679++;
+  if (G.dow === 2) {
+    setDlg('風滾草？', '這根本就是679在偽裝成風滾草！\n679（懶洋洋）：「今天公休啦...別管我...」');
+    return;
+  }
+  if (G.phase === 2) {
+    if (Math.random() < 0.5) {
+      setDlg('679（下班後）','679：「啊！你怎麼知道我在這裡？\n下班後我就是個普通人啦！」', [
+        { t:'一起閒逛吧', fn:()=>{ changeStat('social',1); changeStat('mood',1); setDlg('679','679：「好吧好吧...不過別拍照。」'); } },
+        { t:'打個招呼', fn:()=>{ setDlg('679','679揮了揮手。'); } },
+      ]);
+    } else {
+      setDlg('679','679出沒！不過他好像想趕快躲起來...');
+    }
+  } else {
+    setDlg('679（超商店員）','679：「歡迎光臨～今天要買什麼？」\n\n週一可以買打折的i珍食便當喔！', [
+      { t:'去看商品', fn:()=>{ showScreen('scr-shop'); renderShop(); } },
+      { t:'閒聊', fn:()=>{ changeStat('social',1); setDlg('679','679：「最近來的客人越來越多了...工作壓力好大。」'); } },
+    ]);
+  }
+  if (G.shop679 >= 10) triggerEnding('trueB');
+}
+
+function interactRong() {
+  changeStat('mood', 2);
+  const lines = [
+    '蓉蓉（鱈魚）：「嗚嗚嗚...（表示友好）」\n你心情好多了！',
+    '蓉蓉：「嗚...」\n牠在張雅塘邊悠游，看起來很自在。',
+    '蓉蓉搖了搖尾巴，像是在跟你打招呼。',
+  ];
+  setDlg('蓉蓉', lines[Math.floor(Math.random()*lines.length)]);
+  notify('+心情2','var(--green)');
+}
+
+function interactKuma() {
+  setDlg('Kuma（棕熊）','Kuma正在研究各種食材...\n「如果你帶魚或水草來，我可以幫你做料理！\n做好之後你可以帶走，吃了心情+1、飽腹+0.5！」', [
+    { t:'拿出水草', fn:()=>{ useItemFromInv('waterweed', ()=>{
+      addItem('kumaFood', 2);
+      setDlg('Kuma','Kuma：「哇！這水草品質不錯！」\n他做出了2份神祕料理，塞給了你。\n「記得吃喔！」');
+      notify('獲得Kuma神祕料理×2！','var(--accent)');
+    }); } },
+    { t:'拿出池塘的魚', fn:()=>{ useItemFromInv('fish', ()=>{
+      addItem('kumaFood', 3);
+      changeStat('favor', 2);
+      setDlg('Kuma','Kuma：「新鮮的魚！」\n做出了3份美味神祕料理！\n「和朋友一起享用吧！」');
+      notify('獲得Kuma神祕料理×3！','var(--accent)');
+    }); } },
+    { t:'只是閒逛', fn:()=>{ setDlg('Kuma','Kuma：「有空再來！食材要新鮮的喔！」'); } },
+  ]);
+}
+
+function interactKotsu() {
+  changeStat('mood', 1);
+  const lines = [
+    '高捷蛙：「呱！」\n牠在路邊跳來跳去，看到你後愣了一下。\n心情+1',
+    '高捷蛙在路邊悠哉地蹦跳，\n你向牠打了個招呼，牠叫了兩聲回應。\n心情+1',
+    '高捷蛙：「呱呱！」\n神奇的生物！打個招呼心情變好了。\n心情+1',
+  ];
+  setDlg('高捷蛙', lines[Math.floor(Math.random()*lines.length)]);
+  notify('+心情1（高捷蛙！）','var(--green)');
+  // After interaction, frog hops away
+  delete G.npcPos.kotsu;
+}
+
+function interactRaicho() {
+  stopMove();
+  // Eating from player's fullness
+  G.fullness = Math.max(0, G.fullness - 1);
+  notify('⚡ 雷鳥偷吃了你的食物！飽腹-1', 'var(--accent)');
+
+  const raichoLines = [
+    '雷鳥（憤怒）：「創基老師根本不懂教學！\n每次上課都在唸學生，有本事自己上！」',
+    '雷鳥（拍翅）：「創基老師的作業量是要殺死人嗎？！\n我昨晚三點才睡！」',
+    '雷鳥（嚷嚷）：「創基老師！你的評分標準是什麼！\n到底！！」',
+    '雷鳥（眼神死）：「...創基老師又改規定了。\n上週說這樣可以，這週又說不行。」',
+    '雷鳥（暴走）：「創基！老！師！\n我的期末報告被退件三次！三次！」',
+  ];
+  const randomLine = raichoLines[Math.floor(Math.random()*raichoLines.length)];
+
+  setDlg('雷鳥', randomLine + '\n\n（雷鳥偷吃了你的便當...飽腹-1）', [
+    { t:'你覺得滷肉飯是怎麼樣的？', fn:() => {
+      setDlg('雷鳥與你的對話',
+        '你：「你覺得滷肉飯是怎麼樣的？」\n\n' +
+        '雷鳥停下來，認真地看著你——\n\n' +
+        '雷鳥：「滷肉飯上的肉就應該是小小塊的啊！\n那種大塊的根本不對！\n哼！這種事情創基老師也分不清楚！」\n\n' +
+        '雷鳥說完拍翅飛走了。');
+      delete G.npcPos.raicho;
+    }},
+    { t:'算了算了（閃人）', fn:() => {
+      setDlg('延恩鎮', '你趁雷鳥不注意偷偷溜走了。\n雷鳥的怒吼聲還在遠處迴盪...');
+      delete G.npcPos.raicho;
+    }},
+  ]);
+}
+
+function interactLandmark(lmId) {
+  switch(lmId) {
+    case 'statue':
+      setDlg('傑拉德威雕像','傑拉德威雕像高聳在廣場中心，\n附近的港哥（真理之口）正在緩緩走動，偶爾嘆氣。\n蘿蔔在雕像周圍整齊排列。', [
+        { t:'默默欣賞', fn:()=>{ changeStat('mood',1); setDlg('廣場','廣場的空氣清新，遠處教堂傳來Techno版聖歌。'); } },
+      ]);
+      break;
+    case 'cinema':
+      showCinema();
+      break;
+    case 'church':
+      setDlg('教堂','教堂裡傳出強烈的Techno版聖詩節拍...\n踏進去，音樂震動著地板。\n心情莫名地好了起來。', [
+        { t:'待一下聽音樂', fn:()=>{ changeStat('mood',3); setDlg('教堂','Techno聖歌讓你感到奇妙的平靜。心情提升！'); notify('+心情3','var(--green)'); } },
+        { t:'離開', fn:()=>{ setDlg('教堂','你踏出教堂，音樂聲漸漸遠去。'); } },
+      ]);
+      break;
+    case 'studio':
+      doStudioInteract();
+      break;
+    case 'art40':
+      setDlg('40號美術社','設計系學生聚集的地方。\n牆上貼滿了作品，空氣裡有油畫的味道。\n你聞到了黑皮的香味...', [
+        { t:'社交互動（+社交1）', fn:()=>{ changeStat('social',1); changeStat('design',1); setDlg('40號美術社','你和設計系同學們交流，學到了不少！\n+社交1 +設計1'); notify('+社交1 +設計1','var(--green)'); } },
+        { t:'購買美術用品', fn:()=>{ showScreen('scr-shop'); renderArt40Shop(); } },
+        { t:'擼黑皮（心情+1）', fn:()=>{ changeStat('mood',1); setDlg('40號美術社','你摸了摸展示用的黑皮素材...\n不知道為何，心情好了起來。\n+心情1'); notify('+心情1（擼黑皮）','var(--accent)'); } },
+        { t:'接設計委託（需技能30+）', fn:()=>{ doAction('commission'); showScreen('scr-game'); } },
+        { t:'在美術社打工（耗3行動）', fn:()=>{ doArt40Work(); } },
+      ]);
+      break;
+    case 'konbini':
+      if (G.dow === 2) {
+        setDlg('超商','⚠ 今天是週二，超商公休！\n679已變成風滾草在路邊滾...'); return;
+      }
+      showScreen('scr-shop'); renderShop();
+      break;
+    case 'music':
+      setDlg('樂器行','聲稱自己是吉他的烏克麗麗「安柔」就在這裡！\n她正在彈一首輕快的歌。', [
+        { t:'聽她彈奏', fn:()=>{ changeStat('mood',2); changeStat('favor',1); setDlg('安柔','安柔：「我彈的是吉他喔！烏克麗麗？才不是！」\n音樂讓心情好了起來。'); notify('+心情2 +好感1','var(--pink)'); } },
+        { t:'購買CD', fn:()=>{ buyCD(); } },
+        { t:'逛逛唱片', fn:()=>{ doAction('records'); showScreen('scr-game'); } },
+      ]);
+      break;
+    case 'pond':
+      setDlg('張雅塘','張雅塘的水面波光粼粼。\n這是特有種的棲息地：高捷蛙、鱈左、張國蠑都在這裡！\n池塘寬廣，蓉蓉在正中央游動。\n要進行釣魚嗎？', [
+        { t:'釣魚！', fn:()=>{ pondFish(true); } },
+        { t:'坐在岸邊發呆', fn:()=>{ changeStat('mood',2); changeStat('design',1); setDlg('張雅塘','你坐在池邊，水面倒映著天空。\n心情慢慢好了起來，靈感也浮現了。'); notify('+心情2 +設計1','var(--green)'); } },
+      ]);
+      break;
+    case 'pond2':
+    case 'pond3': {
+      const pname = lmId === 'pond2' ? '西邊小池塘' : '東邊小池塘';
+      setDlg(pname, '這是一個安靜的小池塘。\n聽說這裡也有不少魚，但高捷蛙比較少見。\n要試試釣魚嗎？', [
+        { t:'釣魚！', fn:()=>{ pondFish(false); } },
+        { t:'坐在岸邊', fn:()=>{ changeStat('mood',1); setDlg(pname,'水面平靜，讓心情稍微平穩了一些。\n+心情1'); notify('+心情1','var(--green)'); } },
+      ]);
+      break;
+    }
+    case 'airport':
+      setDlg('延恩鎮機場','延恩鎮小小的機場，航班很少。\n目前有班機可以飛往台中與高雄。', [
+        { t:'飛往台中', fn:()=>{ flyTo('taichung'); } },
+        { t:'飛往高雄', fn:()=>{ flyTo('kaohsiung'); } },
+        { t:'算了，留在延恩鎮', fn:()=>{ setDlg('機場','你看了看出發板，決定繼續待在延恩鎮。'); } },
+      ]);
+      break;
+  }
+}
+
+function doStudioInteract() {
+  if (!useAction()) return;
+  changeStat('social', 1);
+  let txt = '你來到工作室，設計系的學生們正在趕稿。\n社交能力有所提升。';
+
+  if (G.phase === 2) {
+    if (Math.random() < 0.4) {
+      changeStat('favor', 8);
+      txt += '\n\n你在夜晚的工作室意外遇到了陣恩延！\n陣恩延：「你也在趕稿？」\n這個偶然相遇讓好感度大增！';
+      notify('+好感8（夜晚工作室）','var(--pink)');
+    }
+    if (Math.random() < 0.3 && G.dow !== 2) {
+      G.shop679++;
+      txt += '\n\n另外，你看到角落裡有個奇怪的風滾草... 是679！';
+    }
+  }
+
+  if (G.phase === 2 && Math.random() < 0.15) {
+    // 4AM event
+    txt = '凌晨4點，工作室的燈還亮著...\n陣恩延（精神渙散）：「...你知道嗎，有時候我覺得所有事情都沒有意義。」';
+    const r = Math.random();
+    changeStat('zMood', r > 0.5 ? -10 : 5);
+    changeStat('favor', r > 0.5 ? -3 : 7);
+  }
+
+  setDlg('工作室', txt);
+  notify('+社交1','var(--green)');
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function useAction() {
+  if (G.actLeft <= 0) { notify('今天行動已用完！','var(--red)'); return false; }
+  G.actLeft--;
+  if (G.actLeft === 2) G.phase = 0;
+  if (G.actLeft === 1) G.phase = 1;
+  if (G.actLeft === 0) G.phase = 2;
+  updateHUD();
+  checkGangGeSurprise();
+  return true;
+}
+
+function doAction(type) {
+  if (!useAction()) return;
+  G.actToday.push(type);
+
+  switch(type) {
+    case 'create':
+      G.consecutiveCreate++;
+      changeStat('design', 2); changeStat('mood', -3);
+      setDlg('創作基礎','你埋頭練習創作基礎。\n進步是有的，但有點心累...');
+      notify('+設計2 -心情3','var(--pink)');
+      break;
+    case 'draw':
+      changeStat('design', 2); changeStat('mood', -2);
+      setDlg('設計繪畫','你認真繪畫，線條越來越有力量。\n但大腦開始疲憊了。');
+      notify('+設計2 -心情2','var(--pink)');
+      break;
+    case 'daydream':
+      G.consecutiveCreate = 0;
+      changeStat('design', 1); changeStat('mood', 2);
+      setDlg('發呆思考','你望著窗外蘿蔔發呆，靈感悄悄浮現。');
+      notify('+設計1 +心情2','var(--green)');
+      break;
+    case 'records':
+      G.consecutiveCreate = 0;
+      changeStat('mood', 1); changeStat('favor', 2);
+      if (G.actToday.filter(a=>a==='records').length >= 3) {
+        changeStat('favor', -1);
+        setDlg('唱片行','又是周杰倫...你有點聽膩了。\n好感度稍微下降。');
+      } else {
+        setDlg('唱片行','你在唱片行聽歌，心情不錯。');
+      }
+      notify('+心情1 +好感2','var(--accent)');
+      break;
+    case 'commission': {
+      G.consecutiveCreate = 0;
+      if (G.design < 30) {
+        setDlg('接委託', '你嘗試接設計委託...\n但系統顯示：\n「需要繪圖技能30以上才能開啟委託功能」\n先好好練習吧！');
+        G.actLeft++; G.phase = Math.max(0, G.phase-1); // refund action
+        updateHUD();
+        return;
+      }
+      const commSuccess = G.design < 50
+        ? Math.random() < 0.50
+        : Math.random() < 0.70;
+      const commGain = G.design < 50 ? 200 : 500;
+      const commDesignUp = 1;
+      if (commSuccess) {
+        changeStat('money', commGain);
+        changeStat('design', commDesignUp);
+        if (G.design < 50) {
+          setDlg('接委託（初級）', `你完成了一份設計委託！\n客戶看起來很滿意。\n\n+$${commGain}，繪圖技能+${commDesignUp}`);
+        } else {
+          setDlg('接委託（進階）', `你完成了一份高級設計委託！\n客戶讚不絕口，報酬相當豐厚。\n\n+$${commGain}，繪圖技能+${commDesignUp}`);
+        }
+        notify(`+$${commGain} 委託成功！`, 'var(--green)');
+      } else {
+        changeStat('mood', -3);
+        setDlg('接委託（失敗）', '你努力完成委託，但客戶不太滿意...\n「感謝您的參與，但這次不符合需求。」\n\n沒有獲得報酬，心情有點沮喪。\n心情-3');
+        notify('委託失敗 -心情3', 'var(--red)');
+      }
+      break;
+    }
+    case 'art40Work':
+      G.consecutiveCreate = 0;
+      changeStat('money', 100);
+      changeStat('design', 1);
+      setDlg('40號美術社打工', '你在40號美術社幫忙整理商品、招待客人。\n老闆給了你薪水，還傳授了一些美術知識！\n\n+$100，繪圖技能+1\n（消耗3點行動值）');
+      notify('+$100 +設計1（打工！）', 'var(--green)');
+      break;
+  }
+  checkEndingConditions();
+  updateHUD();
+}
+
+function checkGangGeSurprise() {
+  if (G.consecutiveCreate >= 3) {
+    // Port-ge surprise event
+    setTimeout(() => {
+      setDlg('港哥（突然出現在身後）','你轉頭，港哥正站在你身後，嘆了口氣...\n「需要幫忙嗎？」', [
+        { t:'港哥救救我', fn:()=>{ changeStat('design',-2); changeStat('mood',3); setDlg('港哥','港哥點了點頭，給了你一些建議。\n設計-2 心情+3'); notify('-設計2 +心情3','var(--accent)'); } },
+        { t:'不用，我自己可以搞定', fn:()=>{ changeStat('design',2); changeStat('mood',-3); setDlg('港哥','港哥點了點頭，再度嘆氣，走開了。\n設計+2 心情-3'); notify('+設計2 -心情3','var(--pink)'); } },
+      ]);
+    }, 800);
+    G.consecutiveCreate = 0;
+  }
+}
+
+// ============================================================
+// POND FISHING
+// ============================================================
+function pondFish(isMainPond = true) {
+  stopMove(); // prevent movement lock after dialogue
+  if (!useAction()) return;
+  G.fishCount++;
+  const roll = Math.random();
+  let txt = '';
+
+  if (roll < 0.30) {
+    txt = '你靜靜地等待...\n什麼都沒上鉤。\n池面只有漣漪。';
+  } else if (roll < 0.35) {
+    // 青蛙 - 只有張雅塘能釣到高捷蛙
+    if (isMainPond && Math.random() < 0.55) {
+      G.frogCount++;
+      changeStat('mood',-1); changeStat('design',2);
+      txt = '你釣到了傳說中的「高捷蛙」！\n牠瞪著你，然後用力跳走了。\n心情有點低落，但獲得了設計靈感！';
+      notify('-心情1 +設計2（高捷蛙！）','var(--pink)');
+      if (G.frogCount >= 20) {
+        unlockAch('love_mrt');
+        unlockAch('love679');
+        setDlg('張雅塘',txt+'\n\n✦ 成就解鎖：愛高捷！\n679莫名感到一陣不安...');
+        return;
+      }
+    } else {
+      txt = '你釣到一隻普通青蛙，牠呱呱叫著跳走了。';
+    }
+  } else if (roll < 0.55) {
+    if (Math.random() < 0.2) {
+      addItem('fish', 1);
+      const isKodari = isMainPond && Math.random() < 0.3;
+      if (isKodari) {
+        addItem('fish', 1);
+        txt = '你釣到了鱈左！是蓉蓉！\n她發出「嗚嗚嗚」的聲音...\n可以拿去給Kuma加工！';
+        changeStat('mood',2);
+      } else {
+        txt = '你釣到了一條魚！\n也許Kuma可以幫你加工成美味料理？';
+      }
+    } else {
+      addItem('fish', 1);
+      txt = '你釣到了一條魚！';
+    }
+    notify('獲得魚！','var(--accent)');
+  } else if (roll < 0.85) {
+    if (Math.random() < 0.05) {
+      G.shop679++;
+      txt = '你拉起水草...等等！\n這是偽裝成水草的679！\n679（慌張）：「你不要跟任何人說...」';
+    } else {
+      addItem('waterweed', 1);
+      txt = '你釣到了水草。\n也許KUMA可以用它做料理？';
+      notify('獲得水草','var(--dim)');
+    }
+  } else {
+    const items = ['feather', 'cd'];
+    const it = items[Math.floor(Math.random()*items.length)];
+    addItem(it, 1);
+    txt = '你在池邊意外撿到了' + ITEMS_DB[it].name + '！';
+    notify('獲得道具！','var(--accent)');
+  }
+
+  if (G.fishCount >= 20) unlockAch('fisherman');
+  const locationName = isMainPond ? '張雅塘' : '小池塘';
+  setDlg(locationName, txt);
+}
+
+// ============================================================
+// DAILY RANDOM EVENTS
+// ============================================================
+function checkDailyEvents() {
+  // 陣恩延 ask for rice (5~50% daily)
+  const riceChance = 0.05 + Math.random()*0.45;
+  if (Math.random() < riceChance) {
+    setTimeout(() => {
+      setDlg('陣恩延（訊息）','陣恩延傳訊息來：\n「可以幫我買一碗肉燥飯嗎？」', [
+        { t:'好（需要背包裡有南部肉燥飯）', fn:()=>{
+          useItemFromInv('s_rice', ()=>{
+            changeStat('favor', 3);
+            setDlg('陣恩延','陣恩延：「謝謝你！這才是真正的肉燥飯！」\n好感度+3');
+            notify('+好感3','var(--pink)');
+          });
+        }},
+        { t:'不要', fn:()=>{
+          changeStat('favor', -2);
+          setDlg('陣恩延','陣恩延：「喔好吧......好難過」\n好感度-2');
+          notify('-好感2','var(--red)');
+        }},
+      ]);
+    }, 1500);
+  }
+}
+
+// ============================================================
+// SHOP
+// ============================================================
+function renderShop() {
+  const isMonday = G.dow === 1;
+  const grid = document.getElementById('shop-grid');
+  grid.innerHTML = '';
+  document.getElementById('shop-money').textContent = '💰$' + G.money;
+
+  const showItems = ['bento', 'drink_tht', 'drink_coco', 'pen', 'portable', 'cd', 'sniper'];
+  if (isMonday) showItems.push('ijian');
+  if (Math.random() < 0.15) showItems.push('methanol');
+
+  showItems.forEach(id => {
+    const item = ITEMS_DB[id];
+    if (!item) return;
+    let price = item.price;
+    if (id === 'ijian') price = Math.round(price * 0.65);
+
+    const div = document.createElement('div');
+    div.className = 'shop-item';
+    div.innerHTML = `
+      <div class="si-icon">${item.icon}</div>
+      <div class="si-info">
+        <div class="si-name">${item.name}${id==='ijian'?'<br><span class="si-disc">★週一65折</span>':''}</div>
+        <div class="si-eff">${item.eff}</div>
+      </div>
+      <div class="si-price">$${price}</div>
+    `;
+    div.onclick = () => {
+      if (G.money < price) { notify('錢不夠！','var(--red)'); return; }
+      changeStat('money', -price);
+      addItem(id, 1);
+      notify('購買了' + item.name,'var(--accent)');
+      document.getElementById('shop-money').textContent = '💰$' + G.money;
+    };
+    grid.appendChild(div);
+  });
+}
+
+function buyCD() {
+  if (G.money < 80) { notify('錢不夠！','var(--red)'); return; }
+  changeStat('money',-80); addItem('cd',1);
+  notify('購買了CD！','var(--accent)');
+}
+
+function renderArt40Shop() {
+  const grid = document.getElementById('shop-grid');
+  grid.innerHTML = '';
+  document.getElementById('shop-title').textContent = '🖼 40號美術社';
+  document.getElementById('shop-money').textContent = '💰$' + G.money;
+
+  const artItems = ['pen','watercolor','canvas','charcoal','palette','ink','sketchbook','blackpaint','ptablet','tablet'];
+  artItems.forEach(id => {
+    const item = ITEMS_DB[id];
+    if (!item) return;
+    const div = document.createElement('div');
+    div.className = 'shop-item';
+    div.innerHTML = `
+      <div class="si-icon">${item.icon}</div>
+      <div class="si-info">
+        <div class="si-name">${item.name}</div>
+        <div class="si-eff">${item.eff}</div>
+      </div>
+      <div class="si-price">$${item.price}</div>
+    `;
+    div.onclick = () => {
+      if (G.money < item.price) { notify('錢不夠！','var(--red)'); return; }
+      changeStat('money', -item.price);
+      addItem(id, 1);
+      notify('購買了' + item.name,'var(--accent)');
+      document.getElementById('shop-money').textContent = '💰$' + G.money;
+    };
+    grid.appendChild(div);
+  });
+  showScreen('scr-shop');
+}
+
+// ============================================================
+// CINEMA SYSTEM
+// ============================================================
+const MOVIES_DB = [
+  // 好感+5
+  { title:'春光乍洩', favor:5 },
+  { title:'霸王別姬', favor:5 },
+  { title:'蜘蛛人：穿越新宇宙', favor:5 },
+  { title:'青春電幻物語', favor:5 },
+  { title:'金魚亂倒少女日記', favor:5 },
+  { title:'青春末世物語', favor:5 },
+  { title:'眾生相', favor:5 },
+  { title:'影武者', favor:5 },
+  { title:'聖山', favor:5 },
+  // 好感+4
+  { title:'九龍城寨之圍城', favor:4 },
+  { title:'自殺房間', favor:4 },
+  { title:'歪小子史考特', favor:4 },
+  { title:'國寶', favor:4 },
+  { title:'千禧曼波', favor:4 },
+  { title:'墮落天使', favor:4 },
+  { title:'天使之卵', favor:4 },
+  { title:'琳達！琳達！琳達！', favor:4 },
+  { title:'新天堂樂園', favor:4 },
+  { title:'霧中的故事', favor:4 },
+  { title:'8½', favor:4 },
+  { title:'哈姆奈特', favor:4 },
+  { title:'薔薇的葬禮', favor:4 },
+  { title:'破碎太陽之心', favor:4 },
+  { title:'俘虜', favor:4 },
+  { title:'高校人形金字塔', favor:4 },
+  { title:'大象席地而坐', favor:4 },
+  { title:'爸媽死了我卻不想哭', favor:4 },
+  // 好感+3
+  { title:'掃毒2', favor:3 },
+  { title:'龍蝦', favor:3 },
+  { title:'大濛', favor:3 },
+  { title:'郵差', favor:3 },
+  { title:'淺田家！', favor:3 },
+  { title:'全家就弒你家', favor:3 },
+  { title:'花與愛麗絲', favor:3 },
+  { title:'一首龐克救地球', favor:3 },
+  { title:'雙喜', favor:3 },
+  // 好感+2
+  { title:'惡女花魁', favor:2 },
+  { title:'穿越地獄之門', favor:2 },
+  { title:'酷兒', favor:2 },
+  { title:'納米比亞沙漠直播中', favor:2 },
+  // 好感-1
+  { title:'蘭宇', favor:-1 },
+];
+
+function pickMovies() {
+  // Randomly pick 5 movies from the full list
+  const shuffled = [...MOVIES_DB].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 5);
+}
+
+function showCinema() {
+  if (!useAction()) return;
+  const selection = pickMovies();
+
+  const solo = selection.map(m => ({
+    t: `獨自觀看《${m.title}》— $200`,
+    fn: () => watchMovie(m, false)
+  }));
+  const withZhen = selection.map(m => ({
+    t: `邀陣恩延一起看《${m.title}》— $400`,
+    fn: () => watchMovie(m, true)
+  }));
+
+  // interleave: solo then withZhen per movie, but that's 10 buttons — instead show by movie
+  const choices = [];
+  selection.forEach(m => {
+    choices.push({ t:`《${m.title}》獨自 $200`, fn:()=>watchMovie(m,false) });
+    choices.push({ t:`《${m.title}》+陣恩延 $400`, fn:()=>watchMovie(m,true) });
+  });
+  choices.push({ t:'算了，下次再說', fn:()=>{ G.actLeft++; G.phase=Math.max(0,G.phase-1); updateHUD(); setDlg('電影院','你看了看海報，決定下次再來。'); }});
+
+  setDlg('電影院 🎬', '電影院今日放映（共5部）\n獨自觀看 $200 / 帶陣恩延 $400\n陣恩延喜歡的電影好感度更高！', choices);
+}
+
+function watchMovie(movie, withZhen) {
+  const cost = withZhen ? 400 : 200;
+  if (G.money < cost) {
+    notify('錢不夠！','var(--red)');
+    setDlg('電影院', `看電影需要 $${cost}，你的錢不夠。\n趕快去賺錢吧！`);
+    G.actLeft++; G.phase=Math.max(0,G.phase-1); updateHUD();
+    return;
+  }
+  changeStat('money', -cost);
+  changeStat('mood', 2);
+
+  if (withZhen) {
+    changeStat('favor', movie.favor);
+    G.daysSinceZhen = 0;
+    let reaction = '';
+    if (movie.favor >= 5) reaction = `陣恩延：「！這部片我超喜歡！你怎麼知道！」\n\n她看起來非常開心，好感度大幅提升！\n好感+${movie.favor}`;
+    else if (movie.favor >= 4) reaction = `陣恩延：「這部片挺好看的。不錯的選擇。」\n\n她似乎享受這次的觀影。好感+${movie.favor}`;
+    else if (movie.favor >= 3) reaction = `陣恩延：「還行啦，算是可以看的程度。」\n\n她給出普通評價。好感+${movie.favor}`;
+    else if (movie.favor >= 2) reaction = `陣恩延：「嗯...不是很符合我的口味。\n但還是謝謝你邀請我。」\n\n好感+${movie.favor}`;
+    else reaction = `陣恩延（皺眉）：「這部...我不是很喜歡。\n以後選片麻煩先問我一下。」\n\n好感${movie.favor}`;
+
+    setDlg('電影院《' + movie.title + '》',
+      `你和陣恩延一起看了《${movie.title}》。\n\n${reaction}\n\n你的心情也好了起來。心情+2`);
+    notify(`+心情2 好感${movie.favor>0?'+':''}${movie.favor}（${movie.title}）`, movie.favor >= 3 ? 'var(--pink)' : 'var(--dim)');
+  } else {
+    setDlg('電影院《' + movie.title + '》',
+      `你獨自看了《${movie.title}》。\n\n電影院裡安靜的燈光讓你沉浸其中。\n\n心情+2`);
+    notify('+心情2（獨自看電影）', 'var(--green)');
+  }
+  G.consecutiveCreate = 0;
+}
+
+function flyTo(dest) {
+  if (dest === 'taichung') {
+    setDlg('台中機場','你搭上班機，飛往台中。\n\n降落後，放眼望去...\n這裡是荒蕪之地。\n台中尚未開發，只有廣闊的空地與遠處若隱若現的大肚山。\n\n你搭下一班機飛回延恩鎮了。');
+    notify('✈ 台中：荒蕪之地...','var(--dim)');
+  } else if (dest === 'kaohsiung') {
+    setDlg('高雄機場','你搭上班機，飛往高雄。\n\n降落後，放眼望去...\n這裡是荒蕪之地。\n高雄尚未開發，只有遠處的85大樓孤零零地矗立著。\n\n你搭下一班機飛回延恩鎮了。');
+    notify('✈ 高雄：荒蕪之地...','var(--dim)');
+  }
+}
+
+// ============================================================
+// INVENTORY
+// ============================================================
+function showInv() {
+  showScreen('scr-inv');
+  selectedInvItem = null;
+  renderInv();
+  document.getElementById('inv-money').textContent = '💰$' + G.money;
+}
+
+function renderInv() {
+  const grid = document.getElementById('inv-grid');
+  grid.innerHTML = '';
+  G.inventory.forEach(slot => {
+    const item = ITEMS_DB[slot.id] || { name: slot.id, icon:'📦' };
+    const div = document.createElement('div');
+    div.className = 'inv-item' + (selectedInvItem && selectedInvItem.id === slot.id ? ' selected' : '');
+    div.innerHTML = `<div class="ii-icon">${item.icon}</div><div class="ii-name">${item.name}</div><div class="ii-count">x${slot.count}</div>`;
+    div.onclick = () => { selectedInvItem = slot; renderInv(); showInvDetail(slot); };
+    grid.appendChild(div);
+  });
+}
+
+function showInvDetail(slot) {
+  const item = ITEMS_DB[slot.id] || {};
+  document.getElementById('inv-detail').innerHTML = `
+    <div class="id-name">${item.icon||'📦'} ${item.name||slot.id}</div>
+    <div class="id-desc">${item.eff || '特殊道具'}</div>
+  `;
+  const area = document.getElementById('inv-act-area');
+  area.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'inv-act-row';
+  const u = document.createElement('button');
+  u.className = 'ia-btn ia-use'; u.textContent = '使用';
+  u.onclick = () => useItemDirect(slot.id);
+  const g = document.createElement('button');
+  g.className = 'ia-btn ia-give'; g.textContent = '送給陣恩延';
+  g.onclick = () => giveToZhen(slot.id);
+  row.appendChild(u); row.appendChild(g);
+  area.appendChild(row);
+}
+
+function addItem(id, count) {
+  const ex = G.inventory.find(i => i.id === id);
+  if (ex) ex.count += count;
+  else G.inventory.push({ id, count });
+}
+
+function removeItem(id, count=1) {
+  const ex = G.inventory.find(i => i.id === id);
+  if (!ex || ex.count < count) return false;
+  ex.count -= count;
+  if (ex.count <= 0) G.inventory = G.inventory.filter(i => i.id !== id);
+  return true;
+}
+
+function useItemFromInv(id, cb) {
+  if (!removeItem(id)) { notify('背包裡沒有' + (ITEMS_DB[id]?.name || id) + '！','var(--red)'); return; }
+  cb();
+  renderInv();
+}
+
+function useItemDirect(id) {
+  if (!removeItem(id)) { notify('沒有了！','var(--red)'); return; }
+  const item = ITEMS_DB[id] || {};
+  if (item.moodUp) changeStat('mood', item.moodUp);
+  if (item.fullUp) {
+    G.fullness = Math.min(6, G.fullness + item.fullUp);
+    notify(`飽腹+${item.fullUp}（${G.fullness.toFixed(1)}/6）`, 'var(--green)');
+  }
+  if (id === 'pen') changeStat('design', 1);
+  if (id === 'watercolor') { changeStat('design', 2); changeStat('mood', 1); }
+  if (id === 'canvas') { changeStat('design', 3); }
+  if (id === 'charcoal') { changeStat('design', 1); }
+  if (id === 'palette') { changeStat('design', 2); }
+  if (id === 'ink') { changeStat('design', 1); changeStat('mood', 1); }
+  if (id === 'sketchbook') { changeStat('design', 2); changeStat('mood', 1); }
+  if (id === 'blackpaint') { changeStat('mood', 1); setDlg('擼黑皮','你把黑皮塗料塗在紙上，用手指輕輕擼過...\n不知道為何，壓力消失了。心情+1'); notify('+心情1（擼黑皮！）','var(--accent)'); renderInv(); updateHUD(); return; }
+  if (id === 'tablet') { changeStat('design', 4); changeStat('mood', 10); }
+  if (id === 'ptablet') { changeStat('design', 3); changeStat('mood', 5); }
+  if (id === 'portable') changeStat('mood', 3);
+  if (id === 'sniper') changeStat('combat', 4);
+  if (id === 'methanol') {
+    changeStat('mood', -20);
+    if (G.mood <= -50) { unlockAch('drunk_die'); triggerEnding('bad_player'); }
+  }
+  if (id === 'vodka') { changeStat('mood', 8); }
+  if (id === 'kumaFood') { setDlg('Kuma神祕料理','你吃了Kuma的神祕料理...\n味道奇妙，但心情變好了！\n心情+1 飽腹+0.5'); }
+  if (!item.fullUp) notify('使用了' + (item.name||id),'var(--accent)');
+  else if (!id.includes('kuma')) notify('使用了' + (item.name||id),'var(--accent)');
+  renderInv();
+  updateHUD();
+}
+
+function giveToZhen(id) {
+  if (!removeItem(id)) { notify('背包裡沒有了！','var(--red)'); return; }
+  const item = ITEMS_DB[id] || {};
+  let favDelta = item.favorUp || 0;
+  let resp = '';
+
+  if (id === 's_rice') { favDelta=5; resp='陣恩延：「這才是真正的肉燥飯！你懂我！」'; }
+  else if (id === 'n_rice') { favDelta=-2; resp='陣恩延：「你根本不懂真正的食物。」'; }
+  else if (id === 'noodle') { favDelta=-10; resp='陣恩延：「你是腦袋需要重製嗎？台北人品味都那麼差嗎？」'; }
+  else if (id === 'methanol') { changeStat('zMood',-15); favDelta=-5; resp='陣恩延喝了一口...「這味道...不對勁！」\n精神陷入混亂！'; }
+  else if (id === 'vodka') { changeStat('zMood', Math.random()<0.5?10:-5); favDelta=10; resp='陣恩延喝了伏特加，精神陷入隨機混亂...\n陣恩延表情變得奇怪起來。'; }
+  else if (id === 'tablet') { favDelta=5; resp='陣恩延：「液晶繪圖板！？你這是...謝謝。」\n眼神裡有了不一樣的光芒。'; }
+  else if (id === 'feather') { favDelta=3; resp='陣恩延：「夜露的羽毛？...謝謝你。」'; }
+  else if (item.favorUp) resp = '陣恩延收下了'+item.name+'，點了點頭。';
+  else resp = '陣恩延收下了'+item.name+'。';
+
+  changeStat('favor', favDelta);
+  setDlg('陣恩延', resp);
+  notify((favDelta>=0?'+':'') + '好感' + favDelta, favDelta>=0?'var(--pink)':'var(--red)');
+  renderInv();
+  showScreen('scr-game');
+  checkEndingConditions();
+}
+
+// ============================================================
+// ACHIEVEMENTS
+// ============================================================
+function unlockAch(id) {
+  if (G.achievements.includes(id)) return;
+  G.achievements.push(id);
+  localStorage.setItem('yen_ach', JSON.stringify(G.achievements));
+  const ach = ALL_ACH.find(a=>a.id===id);
+  if (!ach) return;
+  const el = document.createElement('div');
+  el.className = 'ach-popup';
+  el.innerHTML = `<span style="font-size:22px">${ach.icon}</span><br>★ 成就解鎖 ★<br>${ach.name}`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 4000);
+}
+
+function renderAch() {
+  const grid = document.getElementById('ach-grid');
+  grid.innerHTML = '';
+  ALL_ACH.forEach(ach => {
+    const unlocked = G.achievements.includes(ach.id);
+    const div = document.createElement('div');
+    div.className = 'ach-card' + (unlocked ? ' unlocked' : ' locked');
+    div.innerHTML = `
+      <div class="ach-icon">${ach.icon}</div>
+      <div class="ach-name">${unlocked || !ach.secret ? ach.name : '???'}</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function showStats() {
+  showScreen('scr-stats');
+  document.getElementById('s-design').textContent = G.design;
+  document.getElementById('s-social').textContent = G.social;
+  document.getElementById('s-combat').textContent = G.combat;
+  document.getElementById('s-mood').textContent = G.mood;
+  document.getElementById('s-zmood').textContent = G.zMood;
+  document.getElementById('s-favor').textContent = G.favor;
+  document.getElementById('s-money').textContent = '💰 $' + G.money;
+  document.getElementById('s-day').textContent = '第'+G.day+'天 '+DAYS[G.dow]+' '+TIMES[G.phase] + '  飽腹：'+G.fullness.toFixed(1)+'/3';
+  ['design','social','combat'].forEach(k=>{
+    document.getElementById('b-'+k).style.width = Math.max(0,Math.min(100,G[k]))+'%';
+  });
+  const moodPct = Math.max(0,(G.mood+50)/150*100);
+  const zmPct = Math.max(0,(G.zMood+50)/150*100);
+  document.getElementById('b-mood').style.width = moodPct+'%';
+  document.getElementById('b-zmood').style.width = zmPct+'%';
+  const fl = document.getElementById('s-favor-lbl');
+  if (G.favor>=80) fl.textContent='💕 深愛';
+  else if (G.favor>=50) fl.textContent='❤ 喜歡';
+  else if (G.favor>=20) fl.textContent='🌸 好感';
+  else if (G.favor>=0) fl.textContent='😐 普通';
+  else if (G.favor>=-30) fl.textContent='😒 冷淡';
+  else fl.textContent='😡 厭惡';
+  if (G.social >= 80) unlockAch('social_god');
+}
+
+// ============================================================
+// STATS / HUD
+// ============================================================
+function changeStat(stat, amount) {
+  if (stat === 'money') G.money = Math.max(0, G.money + amount);
+  else if (stat === 'design') G.design = Math.max(0, Math.min(100, G.design + amount));
+  else if (stat === 'social') G.social = Math.max(0, Math.min(100, G.social + amount));
+  else if (stat === 'combat') G.combat = Math.max(0, Math.min(100, G.combat + amount));
+  else if (stat === 'mood') {
+    // Apply weather modifier to positive mood gains
+    let adj = amount;
+    if (amount > 0 && G.weatherMoodMod < 0) {
+      adj = Math.max(0, amount + G.weatherMoodMod);
+    }
+    G.mood = Math.max(-50, Math.min(100, G.mood + adj));
+  }
+  else if (stat === 'zMood') G.zMood = Math.max(-50, Math.min(100, G.zMood + amount));
+  else if (stat === 'favor') G.favor = Math.max(-100, Math.min(100, G.favor + amount));
+  updateHUD();
+  checkDeathConditions();
+}
+
+function updateHUD() {
+  document.getElementById('hud-day').textContent = '第'+G.day+'天 '+DAYS[G.dow]+' '+TIMES[G.phase];
+  document.getElementById('hud-money').textContent = '💰$'+G.money;
+  const actMax = G.actLeft <= 3 ? 3 : G.actLeft;
+  document.getElementById('hud-acts').textContent = '♦'.repeat(Math.max(0,G.actLeft))+'♢'.repeat(Math.max(0,3-G.actLeft))+' x'+G.actLeft;
+  const wi = (WEATHER_ICON && WEATHER_ICON[G.weather]) || '☀';
+  document.getElementById('time-badge').textContent = wi+' '+TIMES[G.phase]+' 飽:'+G.fullness.toFixed(1)+'/3';
+}
+
+function checkDeathConditions() {
+  if (G.mood <= -50) triggerEnding('bad_player');
+  if (G.zMood <= -50) triggerEnding('bad_zhen');
+}
+
+function checkEndingConditions() {
+  if (G.design >= 100 && G.statueUses >= 5) triggerEnding('trueA');
+  if (G.gameCount >= 20) triggerEnding('trueC');
+  if (G.shop679 >= 10) triggerEnding('trueB');
+  if (G.favor >= 80 && G.day >= 8 && Math.random() < 0.25) triggerEnding('good');
+}
+
+// ============================================================
+// END DAY
+// ============================================================
+function rollWeather() {
+  const r = Math.random();
+  if (r < 0.50) {
+    // Rain 50%
+    const r2 = Math.random();
+    if (r2 < 0.70) {
+      G.weather = 'drizzle';
+      G.weatherMoodMod = -0.5;
+    } else {
+      G.weather = 'storm';
+      G.weatherMoodMod = -1;
+    }
+  } else if (r < 0.80) {
+    G.weather = 'sunny';
+    G.weatherMoodMod = 0;
+  } else {
+    G.weather = 'cloudy';
+    G.weatherMoodMod = 0;
+  }
+}
+
+const WEATHER_ICON = { sunny:'☀', cloudy:'☁', drizzle:'🌧', storm:'⛈' };
+const WEATHER_NAME = { sunny:'晴天', cloudy:'陰天', drizzle:'毛毛雨', storm:'大雷雨' };
+
+function endDay() {
+  // Fullness check - flat -10 if below 3
+  if (G.fullness < 3) {
+    changeStat('mood', -10);
+    notify(`⚠ 今日飽腹不足（${G.fullness.toFixed(1)}/3）！心情-10`, 'var(--red)');
+  }
+  // Overeating penalty
+  const overeatPenalty = G.fullness > 5;
+
+  G.day++;
+  G.dow = (G.dow % 7) + 1;
+  G.phase = 0;
+  G.actLeft = overeatPenalty ? 2 : 3;
+  G.actToday = [];
+  G.daysSinceZhen++;
+  G.fullness = 0; // reset daily fullness
+
+  // Roll weather for new day
+  rollWeather();
+
+  // Daily income $300
+  changeStat('money', 300);
+  notify('📅 新的一天！領取了 $300 日常經費', 'var(--green)');
+
+  if (G.daysSinceZhen >= 3) {
+    changeStat('favor', -10);
+    changeStat('zMood', -5);
+    notify('⚠ 已3天沒找陣恩延！好感大降！','var(--red)');
+    setTimeout(() => setDlg('陣恩延（訊息）','陣恩延傳來訊息：\n「...你根本不在乎我吧。」\n好感度-10，陣恩延心情-5'), 1000);
+  }
+
+  changeStat('mood', 1);
+  updateNPCPositions();
+  updateHUD();
+  checkDailyEvents();
+  checkRandomRoadEncounter();
+
+  let msg = `第${G.day}天，${DAYS[G.dow]}。\n`;
+  msg += `今日天氣：${WEATHER_ICON[G.weather]} ${WEATHER_NAME[G.weather]}`;
+  if (G.weather === 'drizzle') msg += '（行動心情效果-0.5）';
+  if (G.weather === 'storm') msg += '（行動心情效果-1）';
+  msg += '\n';
+  if (overeatPenalty) msg += '⚠ 昨天吃太多了！今日行動值-1\n';
+  if (G.dow === 2) msg += '⚠ 今天是週二，超商公休！679變成風滾草了！\n';
+  if (G.dow === 1) msg += '★ 今天是週一！超商有i珍食便當65折！\n';
+  msg += '今日飽腹度需求：3\n記得吃東西！';
+  setDlg('延恩鎮', msg);
+}
+
+function checkRandomRoadEncounter() {
+  const roll = Math.random();
+  if (roll < 0.25) {
+    // 小牌、小七、夜露 random encounters
+    const encounters = [
+      { name:'小牌', icon:'🪪', line:'小牌在路邊悠閒地溜達，見到你朝你揮了揮手。\n「嗨！」' },
+      { name:'小七', icon:'7️⃣', line:'小七提著便利商店袋子從路邊走過，\n「喔！你也在這裡！」他打了個招呼。' },
+      { name:'夜露', icon:'🌙', line:'夜露靜靜地站在路燈下，見到你微微一笑。\n「今晚的夜色真好。」', bonus:'feather' },
+    ];
+    const enc = encounters[Math.floor(Math.random()*encounters.length)];
+    setTimeout(() => {
+      changeStat('mood', 1);
+      let extraTxt = '';
+      if (enc.bonus) {
+        addItem(enc.bonus, 1);
+        extraTxt = '\n夜露輕輕遞給你一根羽毛...獲得夜露羽毛！';
+      }
+      setDlg(enc.name + '（路上偶遇）', enc.line + extraTxt + '\n\n心情+1');
+      notify('+心情1（偶遇' + enc.name + '！）','var(--pink)');
+    }, 1200);
+  }
+}
+
+// ============================================================
+// COMBAT
+// ============================================================
+function startCombat() {
+  showScreen('scr-combat');
+  const enemies = [
+    { name:'路邊混混', hp:60, atk:8, boss:false },
+    { name:'設計系大四生', hp:80, atk:12, boss:false },
+    { name:'瓦羅蘭排位敵人', hp:100, atk:15, boss:false },
+    { name:'BOSS: 傑拉德路守衛', hp:150, atk:20, boss:true },
+  ];
+  const isBoss = G.combat >= 70 && Math.random() < 0.3;
+  const e = isBoss ? enemies[3] : enemies[Math.floor(Math.random()*3)];
+  cState = {
+    php: 100+G.combat, pmax: 100+G.combat,
+    ehp: e.hp, emax: e.hp,
+    eatk: e.atk, ename: e.name, boss: e.boss
+  };
+  document.getElementById('c-enemy-lbl').textContent = e.name;
+  document.getElementById('c-ehp-blk').querySelector('.hp-fill').id = 'c-ehp';
+  updateCombatHUD();
+  document.getElementById('c-log').textContent = '戰鬥開始！對手是【'+e.name+'】！\n';
+}
+
+function updateCombatHUD() {
+  const pp = cState.php/cState.pmax*100;
+  const ep = cState.ehp/cState.emax*100;
+  document.getElementById('c-php').style.width = Math.max(0,pp)+'%';
+  document.getElementById('c-ehp').style.width = Math.max(0,ep)+'%';
+  document.getElementById('c-php-txt').textContent = cState.php+'/'+cState.pmax;
+  document.getElementById('c-ehp-txt').textContent = cState.ehp+'/'+cState.emax;
+}
+
+function cLog(msg) {
+  const log = document.getElementById('c-log');
+  log.textContent += msg + '\n';
+  log.scrollTop = log.scrollHeight;
+}
+
+function cAct(type) {
+  if (cState.ehp <= 0 || cState.php <= 0) return;
+  let dmg = 0, dodged = false;
+
+  if (type === 'attack') {
+    dmg = Math.floor((10+G.combat*0.3)*(0.8+Math.random()*0.4));
+    cLog('🔫 射擊！造成'+dmg+'傷害！');
+  } else if (type === 'dodge') {
+    dodged = Math.random() < 0.65;
+    cLog(dodged ? '💨 成功閃避！' : '💨 閃避失敗！');
+  } else if (type === 'snipe') {
+    if (Math.random() < 0.6) {
+      dmg = Math.floor((25+G.combat*0.5)*(0.9+Math.random()*0.2));
+      cLog('🎯 狙擊命中！爆擊'+dmg+'！');
+    } else cLog('🎯 狙擊未命中...');
+  } else if (type === 'retreat') {
+    changeStat('mood',-2); changeStat('combat',1);
+    setDlg('撤退','你選擇撤退，獲得一點戰鬥經驗。\n戰鬥+1 心情-2');
+    showScreen('scr-game'); return;
+  }
+
+  cState.ehp = Math.max(0, cState.ehp - dmg);
+  updateCombatHUD();
+
+  if (cState.ehp <= 0) {
+    cLog('🏆 勝利！');
+    changeStat('combat',2); changeStat('mood',2);
+    if (cState.boss) { unlockAch('valo_win'); }
+    G.gameCount++;
+    setTimeout(()=>{
+      setDlg('勝利','你贏得了這場對決！\n'+(cState.boss?'✦ 成就解鎖：你也是瓦學妹？':''));
+      showScreen('scr-game'); updateHUD();
+    },1000);
+    if (G.gameCount >= 20) triggerEnding('trueC');
+    return;
+  }
+
+  if (!dodged) {
+    const ed = Math.floor(cState.eatk*(0.7+Math.random()*0.6));
+    cState.php = Math.max(0, cState.php - ed);
+    cLog('💥 '+cState.ename+'攻擊！受到'+ed+'傷害！');
+    updateCombatHUD();
+    if (cState.php <= 0) {
+      cLog('💀 被擊敗了...');
+      changeStat('mood',-3);
+      setTimeout(()=>{ setDlg('失敗','你在這場戰鬥中落敗了... 心情-3'); showScreen('scr-game'); updateHUD(); },1000);
+    }
+  }
+}
+
+// ============================================================
+// ENDINGS
+// ============================================================
+function triggerEnding(type) {
+  showScreen('scr-end');
+  const et = document.getElementById('end-title');
+  const ed = document.getElementById('end-text');
+
+  if (type === 'bad_player') {
+    et.textContent = 'BAD END'; et.style.color = 'var(--red)';
+    ed.textContent = '你的心情跌至谷底，再也無法面對延恩鎮的一切...\n\n延恩鎮依舊靜靜矗立，蘿蔔繼續在傑拉德路旁生長。';
+  } else if (type === 'bad_zhen') {
+    et.textContent = 'BAD END'; et.style.color = 'var(--red)';
+    ed.textContent = '陣恩延的精神狀態崩潰，從你的生活中消失了。\n\n你一個人站在市中心廣場，傑拉德威雕像無聲地注視著你。';
+  } else if (type === 'good') {
+    et.textContent = 'GOOD END ♥'; et.style.color = 'var(--pink)';
+    ed.textContent = '陣恩延對著你微笑：「你知道嗎...我喜歡你。」\n\n在延恩鎮，傑拉德威雕像見證了你們的相遇。\n教堂的Techno聖歌聲中，你們在市中心廣場攜手同行。\n\n這是屬於你們的延恩鎮故事。';
+    unlockAch('good_end');
+  } else if (type === 'trueA') {
+    et.textContent = 'TRUE END A ★'; et.style.color = 'var(--accent)';
+    ed.textContent = '港哥一次又一次說著「醜」，每一次你都咬牙重新來過。\n\n設計技能達到頂點的那天，你看清了延恩鎮，也看清了設計的本質。\n\n你收拾行囊，離開了延恩鎮。\n\n多年後，你成為獨當一面的設計師。\n偶爾回想起傑拉德路上的蘿蔔，和那座真理之口石像。\n\n「醜」——那個字，竟成了你一生的動力。';
+    unlockAch('true_a');
+  } else if (type === 'trueB') {
+    et.textContent = 'TRUE END B 🏪'; et.style.color = 'var(--green)';
+    ed.textContent = '679突然說：\n「欸，我們超商缺人手，你要來上班嗎？」\n\n就這樣，你成為了超商的一員。\n周二，你和679一起變成風滾草。\n周一，你們一起賣打折i珍食便當。\n\n成就：「超商之神」';
+    unlockAch('true_b');
+  } else if (type === 'trueC') {
+    et.textContent = 'TRUE END C 🎮'; et.style.color = 'var(--border)';
+    ed.textContent = '你一整天只剩下打遊戲。\n\n瓦羅蘭的世界比延恩鎮更真實，\n螢幕的光芒比教堂的Techno聖歌更動人。\n\n成就：「電競仔」\n\n陣恩延偶爾還是會發訊息...\n但你已經很久沒有回覆了。';
+    unlockAch('true_c');
+  }
+}
+
+// ============================================================
+// DIALOGUE HELPER
+// ============================================================
+function setDlg(speaker, text, choices) {
+  document.getElementById('dlg-spk').textContent = speaker;
+  document.getElementById('dlg-txt').innerHTML = (text||'').replace(/\n/g,'<br>') + '<span class="dlg-cursor"></span>';
+  const dc = document.getElementById('dlg-choices');
+  dc.innerHTML = '';
+  if (choices) choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'ch-btn';
+    btn.textContent = c.t;
+    btn.onclick = c.fn;
+    dc.appendChild(btn);
+  });
+}
+
+// ============================================================
+// NOTIFY
+// ============================================================
+function notify(msg, color) {
+  const el = document.createElement('div');
+  el.className = 'notif';
+  el.style.borderColor = color || 'var(--accent)';
+  el.style.color = color || 'var(--accent)';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2800);
+}
+
+// ============================================================
+// MISC
+// ============================================================
+function showHelp() {
+  showScreen('scr-game');
+  setDlg('遊戲說明',
+    '【延恩鎮 v2 操作說明】\n' +
+    '方向鍵移動玩家角色\n' +
+    'A鍵 / 點擊互動按鈕 靠近NPC互動\n' +
+    '每天可選2次行動\n\n' +
+    '超商周二公休\n' +
+    '周一超商有65折i珍食便當\n' +
+    '張雅塘可釣高捷蛙！\n' +
+    '40號美術社可購買美術用品\n' +
+    '機場可以飛往其他城市\n' +
+    '路邊有時會出現高捷蛙！'
+  );
+}
+
+function restartGame() {
+  const savedAch = JSON.parse(localStorage.getItem('yen_ach') || '[]');
+  G = {
+    day:1, dow:1, phase:0, money:0, actLeft:3, actToday:[],
+    design:10, social:10, combat:10, mood:50, zMood:50, favor:0,
+    fullness:3,
+    weather:'sunny', weatherMoodMod:0,
+    daysSinceZhen:0, statueUses:0, gameCount:0, shop679:0,
+    consecutiveCreate:0, frogCount:0, fishCount:0, ganggeScold:0,
+    inventory:[{id:'pen',count:3},{id:'bento',count:1}],
+    achievements: savedAch,
+    npcPos:{
+      zhen:{tx:7,ty:4},
+      gangge:{tx:9,ty:4,dir:1,timer:0},
+      n679:{tx:19,ty:16},
+      rong:{tx:13,ty:13},
+      kuma:{tx:20,ty:19},
+    },
+    player:{tx:13,ty:10,dir:0},
+  };
+  gameLoopRunning = false;
+  showScreen('scr-title');
+}
+
+// Init stars on title
+(function initStars(){
+  const ts = document.getElementById('scr-title');
+  for (let i=0;i<30;i++){
+    const s = document.createElement('div');
+    s.className = 'star-dot';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*65+'%';
+    s.style.opacity = Math.random()*0.7+0.2;
+    s.style.animation = 'none';
+    ts.appendChild(s);
+  }
+})();
+</script>
+</body>
+</html>
